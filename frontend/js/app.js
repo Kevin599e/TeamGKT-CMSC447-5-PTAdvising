@@ -157,3 +157,43 @@ tmplForm?.addEventListener('submit', async (e) => {
     tmplCreateOutput.textContent = "❌ Error: " + err.message + "\nAre you logged in as admin@umbc.edu?";
   }
 });
+
+tmplForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const data = Object.fromEntries(new FormData(tmplForm));
+  const name = data.template_name?.trim();
+  const rawSections = data.sections_json || "[]";
+
+  let sections;
+  try {
+    sections = JSON.parse(rawSections);
+    if (!Array.isArray(sections)) {
+      throw new Error("Sections must be an array");
+    }
+  } catch (err) {
+    tmplCreateOutput.textContent = "❌ Invalid JSON in Sections: " + err.message;
+    return;
+  }
+
+  // make sure each section has display_order
+  const sectionsWithOrder = sections.map((s, idx) => ({
+    title: s.title || `Section ${idx+1}`,
+    source_content_id: s.source_content_id,
+    display_order: idx
+  }));
+
+  try {
+    const resp = await api('/templates', 'POST', {
+      name,
+      active: true,
+      sections: sectionsWithOrder
+    });
+    tmplCreateOutput.textContent =
+      "✅ Created template:\n" + JSON.stringify(resp, null, 2);
+  } catch (err) {
+    tmplCreateOutput.textContent =
+      "❌ Error: " + err.message + "\n(are you logged in as admin?)";
+  }
+});
+
