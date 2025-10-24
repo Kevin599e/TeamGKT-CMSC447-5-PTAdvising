@@ -1,7 +1,6 @@
-<<<<<<< HEAD
 # UMBC Advisor Packet Generator — Starter
 
-A minimal starter package for a web-based tool that helps UMBC advisors generate consistent pre‑transfer advising packets.
+A starter import for a web-based tool that helps UMBC advisors generate consistent pre‑transfer advising packets.
 
 ## Tech
 
