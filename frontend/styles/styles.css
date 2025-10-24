@@ -10,3 +10,26 @@ input, select, button { padding: 10px 12px; border-radius: 8px; border:1px solid
 button { cursor:pointer; }
 pre { background:#0b1220; padding:12px; border-radius:8px; overflow:auto; }
 #auth-status { color: var(--muted); }
+.optional-block {
+  background:#0b1220;
+  border:1px solid #374151;
+  border-radius:8px;
+  padding:8px 12px;
+  margin:6px 0;
+}
+
+.optional-block label {
+  display:flex;
+  flex-direction:column;
+  font-size:0.8rem;
+  color: var(--fg);
+}
+
+.optional-block code {
+  color: var(--muted);
+  font-size:0.75rem;
+  white-space:pre-wrap;
+  word-break:break-word;
+  margin-top:4px;
+  opacity:0.8;
+}

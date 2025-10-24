@@ -62,25 +62,26 @@
     </section>
 
     <section class="card">
-      <h2>Create New Template (Admin)</h2>
-
-      <form id="template-form">
-        <input name="template_name" placeholder="Template Name (ex: Fall 2025 Transfer Packet)" required />
-        <label style="width:100%">
-          Sections JSON
-          <textarea
-            name="sections_json"
-            style="width:100%;min-height:120px;"
-            placeholder='[
-            { "title": "Welcome", "content": "Welcome to UMBC Advising." },
-            { "title": "Transfer Credits", "content": "Your evaluated credits..." },
-            { "title": "Next Steps", "content": "Please complete orientation..." }]'
-          ></textarea>
-        </label>
-        <button type="submit">Create Template</button>
+      <h2>Template Preview / Builder</h2>
+      <form id="builder-load-form">
+        <input name="template_id_builder" placeholder="Template ID" required />
+        <button type="submit">Load Template Sections</button>
       </form>
+      <div id="builder-output" style="font-size:0.9rem; line-height:1.4;">
+        <!-- we'll fill this with section info + checkboxes -->
+      </div>
+    </section>
 
-      <pre id="template-create-output"></pre>
+    <section class="card">
+      <h2>Generate Packet (with selected sections)</h2>
+      <form id="packet-generate-form">
+        <input name="request_id" placeholder="Student Request ID" required />
+        <input name="template_id" placeholder="Template ID" required />
+        <!-- we'll dynamically insert the optional checkboxes here after builder loads -->
+        <div id="packet-optional-container" style="width:100%;"></div>
+        <button type="submit">Generate Packet</button>
+      </form>
+      <pre id="packet-generate-output"></pre>
     </section>
 
     <section class="card">

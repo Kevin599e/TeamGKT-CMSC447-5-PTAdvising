@@ -10,5 +10,15 @@ Base = declarative_base()
 Base.query = db_session.query_property()
 
 def init_db():
-    from models import User, StudentRequest, Template, TemplateSection, Packet, PacketSection
+    # Import all models so Base.metadata.create_all sees them
+    from models import (
+        User,
+        SourceProgram,
+        StudentRequest,
+        SourceContent,
+        Template,
+        TemplateSection,
+        Packet,
+        PacketSection,
+    )
     Base.metadata.create_all(bind=engine)

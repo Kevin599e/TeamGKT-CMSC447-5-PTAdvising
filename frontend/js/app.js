@@ -1,6 +1,4 @@
 const API = 'http://127.0.0.1:5000/api';
-const tmplForm = document.getElementById('template-form');
-const tmplCreateOutput = document.getElementById('template-create-output');
 
 async function api(path, method='GET', data=null) {
   const opts = { method, headers: { 'Content-Type': 'application/json' }, credentials: 'include' };
@@ -10,6 +8,65 @@ async function api(path, method='GET', data=null) {
   if (!r.ok) throw new Error(json.error || 'Request failed');
   return json;
 }
+
+function renderTemplateBuilderView(data) {
+  // clear previous optional selections area
+  packetOptionalContainer.innerHTML = "";
+
+  let html = "";
+  html += `<div><strong>Template:</strong> ${data.template_name} (ID ${data.template_id})</div>`;
+  html += `<div><strong>Program:</strong> ${data.program_name || "-"}</div>`;
+  html += `<div style="margin-top:8px;"><strong>Sections:</strong></div>`;
+
+  const sorted = [...data.sections].sort((a,b) => a.display_order - b.display_order);
+
+  sorted.forEach(sec => {
+    const optTag = sec.optional ? " (optional)" : "";
+    const st = sec.section_type;
+
+    let previewText = "";
+    if (sec.source_content_preview) {
+        previewText = sec.source_content_preview.body_preview || "";
+    } else if (st === "advisor_notes") {
+        previewText = "[Advisor will write personalized notes here]";
+    } else if (st === "degree_audit") {
+        previewText = "[Advisor will complete the degree audit table]";
+    } else if (st === "intro") {
+        previewText = "[Auto-filled with student details]";
+    } else {
+        previewText = "";
+    }
+
+    html += `
+      <div class="optional-block">
+        <label>
+          <strong>#${sec.display_order} ${sec.title}${optTag}</strong>
+          <span>type: ${st}</span>
+          <code>${previewText}</code>
+        </label>
+      </div>
+    `;
+
+    // also populate checkboxes in the packet generation form
+    if (sec.optional === true) {
+      packetOptionalContainer.innerHTML += `
+        <div class="optional-block">
+          <label>
+            <input type="checkbox"
+                   name="include_section_ids"
+                   value="${sec.template_section_id}"
+                   checked>
+            Include "${sec.title}" (${sec.section_type})
+          </label>
+        </div>
+      `;
+    }
+  });
+
+  builderOutput.innerHTML = html;
+}
+
+
 
 const authStatus = document.getElementById('auth-status');
 const loginForm = document.getElementById('login-form');
@@ -22,6 +79,14 @@ const listTemplatesBtn = document.getElementById('list-templates');
 const templatesOut = document.getElementById('templates-output');
 const listRequestsBtn = document.getElementById('list-requests');
 const requestsOut = document.getElementById('requests-output');
+
+const builderLoadForm = document.getElementById('builder-load-form');
+const builderOutput = document.getElementById('builder-output');
+
+const packetGenForm = document.getElementById('packet-generate-form');
+const packetOptionalContainer = document.getElementById('packet-optional-container');
+const packetGenOutput = document.getElementById('packet-generate-output');
+
 
 async function refreshMe() {
   try {
@@ -119,41 +184,53 @@ listRequestsBtn.addEventListener('click', async () => {
   }
 });
 
-refreshMe();
-
-tmplForm?.addEventListener('submit', async (e) => {
+builderLoadForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const data = Object.fromEntries(new FormData(tmplForm));
-  const name = data.template_name?.trim();
-  const rawSections = data.sections_json || "[]";
+  // 1. read the template ID from the form
+  const formData = Object.fromEntries(new FormData(builderLoadForm));
+  const templateId = formData.template_id_builder;
 
-  let sections;
+  // 2. call backend
   try {
-    sections = JSON.parse(rawSections);
-    if (!Array.isArray(sections)) {
-        throw new Error("Sections must be an array");
-    }
-  } catch (err) {
-    tmplCreateOutput.textContent = "❌ Invalid JSON in Sections: " + err.message;
-    return;
-  }
+    console.log("[builder] loading template", templateId);
+    const data = await api(`/templates/${templateId}/builder`, 'GET');
+    console.log("[builder] response", data);
 
-  // attach display_order so backend preserves order
-  const sectionsWithOrder = sections.map((s, idx) => ({
-    title: s.title || `Section ${idx+1}`,
-    content: s.content || "",
-    display_order: idx
-  }));
-
-  try {
-    const resp = await api('/templates', 'POST', {
-      name,
-      active: true,
-      sections: sectionsWithOrder
-    });
-    tmplCreateOutput.textContent = "✅ Created template:\n" + JSON.stringify(resp, null, 2);
+    renderTemplateBuilderView(data);
   } catch (err) {
-    tmplCreateOutput.textContent = "❌ Error: " + err.message + "\nAre you logged in as admin@umbc.edu?";
+    console.error("[builder] error", err);
+    builderOutput.textContent = "❌ " + err.message;
   }
 });
+
+
+packetGenForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  // read the basic fields
+  const baseData = Object.fromEntries(new FormData(packetGenForm));
+  const requestId = baseData.request_id;
+  const templateId = baseData.template_id;
+
+  // gather which optional sections were checked
+  const chosenIds = [];
+  packetGenForm
+    .querySelectorAll('input[name="include_section_ids"]:checked')
+    .forEach(cb => {
+      chosenIds.push(parseInt(cb.value, 10));
+    });
+
+  try {
+    const resp = await api('/packets/generate', 'POST', {
+      request_id: parseInt(requestId, 10),
+      template_id: parseInt(templateId, 10),
+      include_section_ids: chosenIds
+    });
+    packetGenOutput.textContent = "✅ Packet created:\n" + JSON.stringify(resp, null, 2);
+  } catch (err) {
+    packetGenOutput.textContent = "❌ " + err.message;
+  }
+});
+
+refreshMe();
