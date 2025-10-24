@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Node
+node_modules/
+*.log
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Outputs
+*.pdf
+*.docx
+*.zip

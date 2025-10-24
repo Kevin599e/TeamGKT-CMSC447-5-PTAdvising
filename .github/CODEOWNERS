@@ -1,0 +1,5 @@
+# Require one FE and one BE review (edit GitHub settings to enforce)
+# Example:
+# @team/frontend @team/backend own respective areas
+/backend/ @your-org/backend-lead
+/frontend/ @your-org/frontend-lead
