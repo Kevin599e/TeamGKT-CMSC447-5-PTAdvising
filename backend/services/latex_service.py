@@ -7,8 +7,11 @@ TEX_TEMPLATE = r"""
 \usepackage[margin=1in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
+<<<<<<< HEAD
 \usepackage{longtable}
 \usepackage{array}
+=======
+>>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
 \usepackage{setspace}
 \setstretch{1.1}
 
@@ -18,6 +21,7 @@ TEX_TEMPLATE = r"""
 
 \section*{Student}
 {{ student_name }} (\texttt{ {{ student_email }} })\\
+<<<<<<< HEAD
 Transferring from: {{ source_institution }}\\
 Target Program: {{ target_program }}
 
@@ -52,7 +56,15 @@ Target Program: {{ target_program }}
 {{ sec.body_for_tex }}
 {% endif %}
 
+=======
+Program: {{ target_program | default("-", true) }}
+
+{% for s in sections %}
+\section*{ {{ s.title }} }
+{{ s.content | replace("\n","\\\\") }}
+>>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
 {% endfor %}
+
 \end{document}
 """
 
@@ -98,9 +110,17 @@ def render_packet_pdf(packet, sections, export_dir="exports", latex_bin="pdflate
     tex_str = tpl.render(
         student_name=packet.request.student_name,
         student_email=packet.request.student_email,
+<<<<<<< HEAD
         source_institution=packet.request.source_institution or "-",
         target_program=packet.request.target_program or "-",
         sections=rendered_sections,
+=======
+        target_program=packet.request.target_program,
+        sections=[{
+            "title": s.title,
+            "content": s.content or ""
+        } for s in sections],
+>>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
     )
 
     tex_path = export / f"packet_{packet.id}.tex"
