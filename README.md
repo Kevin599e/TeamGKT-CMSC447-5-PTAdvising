@@ -14,7 +14,8 @@ A starter import for a web-based tool that helps UMBC advisors generate consiste
 ### 1) Backend
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp ../.env.example .env  # then edit values
 python scripts/seed.py    # creates an admin user (admin@umbc.edu / Passw0rd! — change it)
