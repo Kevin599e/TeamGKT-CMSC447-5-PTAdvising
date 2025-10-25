@@ -208,25 +208,3 @@ class PacketSection(Base):
     content = Column(Text, nullable=True)
 
     packet = relationship("Packet", back_populates="sections")
-
-class SourceContent(Base):
-    __tablename__ = "source_content"
-
-    id = Column(Integer, primary_key=True)
-
-    # internal label, like "CS Major Requirements v2025-Fall"
-    title = Column(String, nullable=False)
-
-    # "text", "table", "markdown", etc.
-    content_type = Column(String, nullable=False, default="text")
-
-    # The actual data. For tables, this can be JSON string.
-    body = Column(Text, nullable=False)
-
-    active = Column(Boolean, default=True)
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # backrefs (optional convenience)
-    template_sections = relationship("TemplateSection", back_populates="source_content")

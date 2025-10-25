@@ -1,8 +1,4 @@
 from flask import Blueprint, request, session
-<<<<<<< HEAD
-=======
-from models import Packet, PacketSection, Template, StudentRequest, TemplateSection
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
 from database import db_session
 from models import (
     Packet,
@@ -67,7 +63,6 @@ def generate_packet():
     student_req = db_session.query(StudentRequest).get(req_id)
     tpl = db_session.query(Template).get(tpl_id)
 
-<<<<<<< HEAD
     if not student_req or not tpl:
         return {"error": "Invalid request_id or template_id"}, 400
 
@@ -82,19 +77,6 @@ def generate_packet():
     db_session.flush()  # now we have p.id
 
     # get all template sections in order
-=======
-    # create the Packet
-    p = Packet(
-        request_id=sr.id,
-        template_id=tpl.id,
-        status="draft"
-    )
-    db_session.add(p)
-    db_session.flush()  # so p.id exists
-
-    # copy each TemplateSection -> PacketSection snapshot
-    # we need the linked SourceContent text
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
     t_sections = (
         db_session.query(TemplateSection)
         .filter(TemplateSection.template_id == tpl.id)
@@ -102,7 +84,6 @@ def generate_packet():
         .all()
     )
 
-<<<<<<< HEAD
     for ts in t_sections:
         # handle optional info_block filtering
         if ts.section_type == "info_block" and ts.optional:
@@ -185,16 +166,6 @@ def generate_packet():
             section_type=ts.section_type,
             content_type=frozen_content_type,
             content=frozen_content_body,
-=======
-    for i, ts in enumerate(t_sections):
-        sc = ts.source_content  # SourceContent row
-        ps = PacketSection(
-            packet_id=p.id,
-            title=ts.title,
-            display_order=i,
-            content_type=sc.content_type if sc else "text",
-            content=sc.body if sc else "",
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
         )
         db_session.add(ps)
 
@@ -241,11 +212,7 @@ def export():
 
     data = request.get_json() or {}
     pid = data.get("packet_id")
-<<<<<<< HEAD
     fmt = data.get("format", "docx")  # "docx" | "pdf"
-=======
-    format_ = data.get("format", "docx")  # "docx" | "pdf"
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
 
     p = db_session.query(Packet).get(pid)
     if not p:
@@ -254,25 +221,15 @@ def export():
     sections = p.sections
     export_dir = os.getenv("EXPORT_DIR", "exports")
 
-<<<<<<< HEAD
     if fmt == "pdf" and os.getenv("ENABLE_LATEX", "false").lower() == "true":
         pdf_path, err_msg = render_packet_pdf(
-=======
-    if format_ == "pdf" and os.getenv("ENABLE_LATEX", "false").lower() == "true":
-        pdf_path, err = render_packet_pdf(
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
             p,
             sections,
             export_dir=export_dir,
             latex_bin=os.getenv("LATEX_BIN", "pdflatex"),
         )
-<<<<<<< HEAD
         if err_msg:
             return {"error": err_msg}, 500
-=======
-        if err:
-            return {"error": err}, 500
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
         return {"path": pdf_path}
 
     path = render_packet_docx(p, sections, export_dir=export_dir)
