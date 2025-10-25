@@ -26,6 +26,7 @@ The API will run at http://127.0.0.1:5000
 
 ### 2) Frontend
 On a new terminal, use a static server:
+
 ```bash
 cd frontend
 python -m http.server 5173
