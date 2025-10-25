@@ -1,5 +1,4 @@
 from database import init_db, db_session
-<<<<<<< HEAD
 from models import (
     User,
     SourceProgram,
@@ -7,9 +6,6 @@ from models import (
     Template,
     TemplateSection,
 )
-=======
-from models import User, Template, TemplateSection, SourceContent
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
 from utils import hash_password
 from datetime import datetime
 import json
@@ -18,11 +14,7 @@ import json
 def main():
     init_db()
 
-<<<<<<< HEAD
     # --- Users ---
-=======
-    # 1. Users
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
     if not db_session.query(User).filter_by(email="admin@umbc.edu").first():
         admin = User(
             email="admin@umbc.edu",
@@ -41,7 +33,6 @@ def main():
 
     db_session.flush()
 
-<<<<<<< HEAD
     # --- Program: Computer Science BS ---
     cs_prog = db_session.query(SourceProgram).filter_by(name="Computer Science BS").first()
     if not cs_prog:
@@ -232,58 +223,6 @@ def main():
             optional=False,
             source_content_id=conclusion_block.id,
         ))
-=======
-    # 2. SourceContent blocks (canonical reusable text)
-    # only create them if table is empty
-    if not db_session.query(SourceContent).first():
-        sc_welcome = SourceContent(
-            title="Welcome / Intro",
-            content_type="text",
-            body="Welcome to UMBC Advising. We’re excited to work with you as you prepare to transfer.",
-            active=True,
-        )
-        sc_transfer = SourceContent(
-            title="Transfer Credit Guidance",
-            content_type="text",
-            body="Evaluation of transfer credits will be finalized after Admissions reviews official transcripts.",
-            active=True,
-        )
-        sc_next = SourceContent(
-            title="Next Steps Checklist",
-            content_type="text",
-            body="1. Submit official transcript.\n2. Complete orientation.\n3. Meet with advisor for course selection.",
-            active=True,
-        )
-
-        db_session.add_all([sc_welcome, sc_transfer, sc_next])
-        db_session.flush()  # so they get IDs
-
-        # 3. Template using those SourceContent rows
-        t = Template(name="Default Advising Template", active=True)
-        db_session.add(t)
-        db_session.flush()
-
-        db_session.add_all([
-            TemplateSection(
-                template_id=t.id,
-                title="Welcome",
-                display_order=0,
-                source_content_id=sc_welcome.id,
-            ),
-            TemplateSection(
-                template_id=t.id,
-                title="Transfer Credits",
-                display_order=1,
-                source_content_id=sc_transfer.id,
-            ),
-            TemplateSection(
-                template_id=t.id,
-                title="Next Steps",
-                display_order=2,
-                source_content_id=sc_next.id,
-            ),
-        ])
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
 
     db_session.commit()
     print("Seed complete: users, CS program, CS template, source content.")

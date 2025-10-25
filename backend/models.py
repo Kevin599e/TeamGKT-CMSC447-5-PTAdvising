@@ -59,7 +59,6 @@ class StudentRequest(Base):
 
     advisor = relationship("User")
 
-<<<<<<< HEAD
 
 class SourceContent(Base):
     """
@@ -75,10 +74,6 @@ class SourceContent(Base):
     'text' | 'markdown' | 'table' | 'audit_table'
     """
     __tablename__ = "source_content"
-=======
-class Template(Base):
-    __tablename__ = "templates"
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
 
     id = Column(Integer, primary_key=True)
 
@@ -108,20 +103,13 @@ class Template(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
-<<<<<<< HEAD
     program = relationship("SourceProgram")
 
-=======
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
     sections = relationship(
         "TemplateSection",
         back_populates="template",
         cascade="all, delete-orphan",
-<<<<<<< HEAD
         order_by="TemplateSection.display_order",
-=======
-        order_by="TemplateSection.display_order"
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
     )
 
 
@@ -155,7 +143,6 @@ class TemplateSection(Base):
 
     template_id = Column(Integer, ForeignKey("templates.id"), nullable=False)
 
-<<<<<<< HEAD
     title = Column(String, nullable=False)
     display_order = Column(Integer, default=0)
 
@@ -167,18 +154,6 @@ class TemplateSection(Base):
     template = relationship("Template", back_populates="sections")
     source_content = relationship("SourceContent")
 
-=======
-    # visible header for this section in the generated packet
-    title = Column(String, nullable=False)
-
-    display_order = Column(Integer, default=0)
-
-    # link to canonical content block
-    source_content_id = Column(Integer, ForeignKey("source_content.id"), nullable=False)
-
-    template = relationship("Template", back_populates="sections")
-    source_content = relationship("SourceContent", back_populates="template_sections")
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
 
 class Packet(Base):
     """
@@ -198,19 +173,11 @@ class Packet(Base):
 
     request = relationship("StudentRequest")
     template = relationship("Template")
-<<<<<<< HEAD
-
-=======
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
     sections = relationship(
         "PacketSection",
         back_populates="packet",
         cascade="all, delete-orphan",
-<<<<<<< HEAD
         order_by="PacketSection.display_order",
-=======
-        order_by="PacketSection.display_order"
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
     )
 
 
@@ -233,20 +200,10 @@ class PacketSection(Base):
 
     packet_id = Column(Integer, ForeignKey("packets.id"), nullable=False)
 
-<<<<<<< HEAD
     title = Column(String, nullable=False)
     display_order = Column(Integer, default=0)
 
     section_type = Column(String, nullable=False)
-=======
-    # freeze the section header at generation time
-    title = Column(String, nullable=False)
-
-    display_order = Column(Integer, default=0)
-
-    # SNAPSHOT of the actual advising content at generation time.
-    # This is not a FK. It's copied text / copied table JSON rendered to text / etc.
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
     content_type = Column(String, nullable=False, default="text")
     content = Column(Text, nullable=True)
 

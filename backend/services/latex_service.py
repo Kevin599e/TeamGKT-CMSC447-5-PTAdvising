@@ -110,17 +110,9 @@ def render_packet_pdf(packet, sections, export_dir="exports", latex_bin="pdflate
     tex_str = tpl.render(
         student_name=packet.request.student_name,
         student_email=packet.request.student_email,
-<<<<<<< HEAD
         source_institution=packet.request.source_institution or "-",
         target_program=packet.request.target_program or "-",
         sections=rendered_sections,
-=======
-        target_program=packet.request.target_program,
-        sections=[{
-            "title": s.title,
-            "content": s.content or ""
-        } for s in sections],
->>>>>>> c6cb0c3f0f3138cb1f34bdefae62c2f75270e69d
     )
 
     tex_path = export / f"packet_{packet.id}.tex"
