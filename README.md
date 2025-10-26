@@ -36,8 +36,9 @@ Visit the site: https://127.0.0.1:5173
 - **admin**: manage templates & sections
 - **advisor**: create student requests and packets
 
-## Upgrade to React + Tailwind (optional)
-
+## Front End With React/TailWind (INCOMPLETE)
+On a separate terminal, run the following command. 
+Note much of the functionality of this is incomplete and serves purely as a concept UI model. 
 ```
 cd frontend-react
 npm i
