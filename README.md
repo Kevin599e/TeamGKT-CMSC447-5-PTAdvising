@@ -18,6 +18,7 @@ python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp ../.env.example .env  # then edit values
+$env:PYTHONPATH = "."
 python scripts/seed.py    # creates an admin user (admin@umbc.edu / Passw0rd! — change it)
 flask --app app run --debug
 ```
