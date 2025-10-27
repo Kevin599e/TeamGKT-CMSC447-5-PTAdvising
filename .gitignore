@@ -21,3 +21,4 @@ Thumbs.db
 *.pdf
 *.docx
 *.zip
+backend/app.db

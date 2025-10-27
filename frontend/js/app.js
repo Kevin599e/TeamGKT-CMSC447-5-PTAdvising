@@ -133,17 +133,6 @@ reqForm.addEventListener('submit', async (e) => {
   }
 });
 
-genForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(genForm));
-  try {
-    const r = await api('/packets/generate', 'POST', data);
-    alert('Packet #' + r.id + ' created, status: ' + r.status);
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
 finForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(finForm));
