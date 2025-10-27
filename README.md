@@ -14,9 +14,11 @@ A starter import for a web-based tool that helps UMBC advisors generate consiste
 ### 1) Backend
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp ../.env.example .env  # then edit values
+$env:PYTHONPATH = "."
 python scripts/seed.py    # creates an admin user (admin@umbc.edu / Passw0rd! — change it)
 flask --app app run --debug
 ```
@@ -24,19 +26,20 @@ flask --app app run --debug
 The API will run at http://127.0.0.1:5000
 
 ### 2) Frontend
-Open `frontend/public/index.html` in your browser, or use a static server:
+On a new terminal, use a static server:
+
 ```bash
 cd frontend
 python -m http.server 5173
-# visit http://127.0.0.1:5173
 ```
-
+Visit the site: https://127.0.0.1:5173
 ## Default Roles
 - **admin**: manage templates & sections
 - **advisor**: create student requests and packets
 
-## Upgrade to React + Tailwind (optional)
-
+## Front End With React/TailWind (INCOMPLETE)
+On a separate terminal, run the following command. 
+Note much of the functionality of this is incomplete and serves purely as a concept UI model. 
 ```
 cd frontend-react
 npm i

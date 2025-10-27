@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* Force LIGHT default page chrome */
+:root { color-scheme: light; }
+html, body, #root { height: 100%; }
+body {
+  background: #ffffff;            /* white */
+  color: rgb(24 24 27);           /* zinc-900-ish */
+}
+
+/* Guard: ignore OS dark unless .dark class is present */
+@media (prefers-color-scheme: dark) {
+  html:not(.dark) body,
+  html:not(.dark) #root,
+  html:not(.dark) #root > div {
+    background: #ffffff !important;
+    color: rgb(24 24 27) !important;
+  }
+  html:not(.dark) header,
+  html:not(.dark) main,
+  html:not(.dark) footer,
+  html:not(.dark) section {
+    background: #ffffff !important;
+  }
+  /* Common borders/text that might be flipped by OS-dark */
+  html:not(.dark) .border { border-color: rgb(228 228 231) !important; }   /* zinc-200 */
+  html:not(.dark) .text-white { color: rgb(24 24 27) !important; }        /* fail-safe */
+}
