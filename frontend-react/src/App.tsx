@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Link, NavLink, useNavigate, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, NavLink, useNavigate, useParams, useLocation } from "react-router-dom";
 import { api } from "./lib/api";
 
 // ---------- Auth helpers ---------- //
@@ -19,7 +19,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
     })();
   }, [navigate]);
 
-  if (ok === null) return <main className="py-10"><Container><div className="text-sm text-zinc-600">Checking session…</div></Container></main>;
+  if (ok === null) return null; // hold render until auth is known
   if (ok === false) return null; // redirected
   return <>{children}</>;
 }
@@ -314,7 +314,7 @@ function HomePage() {
       setLoading(true);
       setErr(null);
       try {
-        const r = await api("/requests");
+        const r = await api<unknown>("/requests");
         const norm = normalizeRequests(firstArrayFrom(r));
         setProgress(norm.filter((x) => (x.status || "").toLowerCase().includes("progress")));
         setNewSubmissions(norm.filter((x) => (x.status || "").toLowerCase().includes("new")));
@@ -446,7 +446,7 @@ function RecordsPage() {
       setLoading(true);
       setErr(null);
       try {
-        const r = await api("/requests");
+        const r = await api<unknown>("/requests");
         const norm = normalizeRequests(firstArrayFrom(r));
         setRecords(norm);
       } catch (e: unknown) {
@@ -633,7 +633,7 @@ function AdvisingSelectionPage() {
     (async () => {
       setLoadingTpl(true); setErrTpl(null);
       try {
-        const res = await api("/templates");
+        const res = await api<unknown>("/templates");
         const arr = firstArrayFrom(res);
         const mapped = arr.map((t) => ({ id: Number(t["id"] ?? t["template_id"]), name: String(t["name"] ?? t["title"] ?? "Template") }));
         setTemplates(mapped);
@@ -651,8 +651,8 @@ function AdvisingSelectionPage() {
     (async () => {
       setLoadingSections(true);
       try {
-        const res = await api(`/templates/${templateId}/builder`);
-        const arr = firstArrayFrom(res["sections"] ?? res);
+        const res = await api<Record<string, unknown>>(`/templates/${templateId}/builder`);
+        const arr = firstArrayFrom((res as Record<string, unknown>)["sections"] ?? res);
         const mapped: BuilderSection[] = arr.map((rec) => ({
           template_section_id: Number((rec["template_section_id"] ?? rec["id"]) as number),
           title: String((rec["title"] ?? rec["name"] ?? "Section") as string),
@@ -717,11 +717,8 @@ function AdvisingSelectionPage() {
               <label htmlFor="major" className="text-sm font-medium">Intended Major</label>
               <select id="major" value={form.major} onChange={(e) => setForm({ ...form, major: e.target.value })} className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-500 outline-none focus:ring-2 focus:ring-amber-400 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
                 <option value="">Select a major…</option>
-                <option>Computer Science</option>
-                <option>Information Systems</option>
-                <option>Mechanical Engineering</option>
+                <option value="general">General</option>
               </select>
-              <p className="text-xs text-zinc-500">Major-specific prompts will load from the database in a later step.</p>
             </div>
 
             {/* Sections from selected template */}
@@ -785,14 +782,6 @@ function AdvisingSelectionPage() {
               </div>
             </div>
 
-            {/* Constant prompts placeholder */}
-            <div className="grid gap-1.5">
-              <label className="text-sm font-medium">Constant Prompts (always included)</label>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="rounded-xl border p-3 text-sm">Failing grade check</div>
-                <div className="rounded-xl border p-3 text-sm">Missing prerequisite review</div>
-              </div>
-            </div>
 
             {/* Actions */}
             <div className="mt-2 flex flex-wrap justify-end gap-3">
@@ -808,15 +797,15 @@ function AdvisingSelectionPage() {
                 onClick={async (e: React.MouseEvent<HTMLButtonElement>) => {
                   e.preventDefault();
                   try {
-                    // TODO: replace placeholder payload with real field names expected by /api/requests
+                    // Updated payload fields to match backend expectations
                     const payload = {
                       student_name: `${form.first} ${form.last}`.trim(),
                       student_email: form.email,
-                      institutional_email: form.inst,
-                      intended_major: form.major,
+                      source_institution: form.inst,
+                      target_program: form.major,
                     };
-                    const r = await api("/requests", "POST", payload);
-                    const newId = r.id ?? r.request_id;
+                    const r = await api<{ id?: number; request_id?: number }>("/requests", "POST", payload);
+                    const newId = (r.id ?? r.request_id);
                     if (newId) setRequestId(Number(newId));
                     alert("Request created.");
                   } catch (err: unknown) {
@@ -835,8 +824,12 @@ function AdvisingSelectionPage() {
                   try {
                     const tplId = templateId;
                     if (!tplId) { alert("Pick a template first."); return; }
-                    const out = await api("/packets/generate", "POST", { request_id: requestId, template_id: tplId, include_section_ids: selectedSections });
-                    const pid = out.id ?? out.packet_id;
+                    const out = await api<{ id?: number; packet_id?: number }>(
+                      "/packets/generate",
+                      "POST",
+                      { request_id: requestId, template_id: tplId, include_section_ids: selectedSections }
+                    );
+                    const pid = (out.id ?? out.packet_id);
                     if (pid) setPacketId(Number(pid));
                     alert("Packet generated.");
                   } catch (err: unknown) {
@@ -859,18 +852,26 @@ export default function App() {
   useThemeInit();
   return (
     <BrowserRouter>
-      <div className="min-h-dvh bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-50">
-        <AppNav />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
-          <Route path="/records" element={<RequireAuth><RecordsPage /></RequireAuth>} />
-          <Route path="/advising" element={<RequireAuth><AdvisingCasePage /></RequireAuth>} />
-          <Route path="/advising/new" element={<RequireAuth><AdvisingSelectionPage /></RequireAuth>} />
-          <Route path="/advising/request/:requestId" element={<RequireAuth><AdvisingSelectionPage /></RequireAuth>} />
-        </Routes>
-        <AppFooter />
-      </div>
+      <InnerApp />
     </BrowserRouter>
+  );
+}
+
+function InnerApp() {
+  const location = useLocation();
+  const onLogin = location.pathname === "/login";
+  return (
+    <div className="min-h-dvh bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-50">
+      {!onLogin && <AppNav />}
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<RequireAuth><HomePage /></RequireAuth>} />
+        <Route path="/records" element={<RequireAuth><RecordsPage /></RequireAuth>} />
+        <Route path="/advising" element={<RequireAuth><AdvisingCasePage /></RequireAuth>} />
+        <Route path="/advising/new" element={<RequireAuth><AdvisingSelectionPage /></RequireAuth>} />
+        <Route path="/advising/request/:requestId" element={<RequireAuth><AdvisingSelectionPage /></RequireAuth>} />
+      </Routes>
+      {!onLogin && <AppFooter />}
+    </div>
   );
 }
