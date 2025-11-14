@@ -791,7 +791,7 @@ function AdvisingSelectionPage() {
               >
                 Back
               </button>
-
+              
               <button
                 className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200"
                 onClick={async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -838,6 +838,42 @@ function AdvisingSelectionPage() {
                 }}
               >
                 Generate Packet
+              </button>
+              
+              <button
+                className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200"
+                onClick={async (e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault();
+                  try {
+                    const out = await api<{ path: string }>("/packets/export", "POST", {
+                      packet_id: packetId,
+                      format: "docx"
+                    });
+
+                    if (!out.path) {
+                      alert("Export failed: no file path returned.");
+                      return;
+                    }
+
+                    // Build full URL
+                    const url = out.path.startsWith("http")
+                      ? out.path
+                      : `${window.location.origin}/${out.path}`;
+
+                  //Force browser to download instead of open new tab
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = url.split("/").pop() || "download";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+
+                  } catch (err: unknown) {
+                    alert(errorMessage(err) || "Failed to export packet");
+                  }
+                }}
+              >
+                Export Packet (DOCX)
               </button>
             </div>
           </form>
