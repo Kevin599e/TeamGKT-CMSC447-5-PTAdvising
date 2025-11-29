@@ -68,13 +68,93 @@ def main():
         body=json.dumps({
             "columns": ["Term", "Course", "Credits", "Notes"],
             "rows": [
-                ["Term 1", "CMSC 201 - Intro to CS I", "3", ""],
-                ["Term 1", "MATH 151 - Calculus I", "4", ""],
-                ["Term 2", "CMSC 202 - Intro to CS II", "3", ""],
-                ["Term 2", "MATH 152 - Calculus II", "4", ""],
-                ["Term 3", "CMSC 203 - Discrete Structures", "3", ""],
-                ["Term 3", "STAT 355 - Probability & Statistics", "3", ""],
-                ["...", "...", "...", "..."]
+                # ----------------- YEAR 1 -----------------
+                ["Year 1 - Fall", "CMSC 201 - Computer Science I", "4", ""],
+                ["Year 1 - Fall", "MATH 151 - Calculus and Analytic Geometry I", "4", ""],
+                ["Year 1 - Fall", "Language 201 GEP", "4", ""],
+                ["Year 1 - Fall", "ENGL 100", "3", ""],
+                ["Year 1 - Fall", "Total", "15", ""],
+
+                ["Year 1 - Benchmarks", "", "",
+                "CMSC 201 minimum grade of B required. "
+                "Students with advanced language placement must complete electives instead. "
+                "University requirements: ENGL 100 or equivalent and a credit-bearing math "
+                "course to be completed within the first year."
+                ],
+
+                ["Year 1 - Spring", "CMSC 202 - Computer Science II", "4", ""],
+                ["Year 1 - Spring", "MATH 152 - Calculus and Analytic Geometry II", "4", ""],
+                ["Year 1 - Spring", "CMSC 203 - Discrete Structures", "3", ""],
+                ["Year 1 - Spring", "AH GEP", "3", ""],
+                ["Year 1 - Spring", "SS GEP", "3", ""],
+                ["Year 1 - Spring", "Total", "17", ""],
+
+                ["Year 1 - Spring Benchmarks", "", "",
+                "CMSC 202 minimum grade of B required; CMSC 202 minimum grade of C required."
+                ],
+
+                # ----------------- YEAR 2 -----------------
+                ["Year 2 - Fall", "CMSC 331 - Programming Languages", "3", ""],
+                ["Year 2 - Fall", "CMSC 341 - Data Structures", "3", ""],
+                ["Year 2 - Fall", "Science Sequence I (see advisor)", "4", ""],
+                ["Year 2 - Fall", "SS GEP", "3", ""],
+                ["Year 2 - Fall", "Elective", "3", ""],
+                ["Year 2 - Fall", "Total", "16", ""],
+                ["Year 2 - Benchmarks", "", "", "None."],
+
+                ["Year 2 - Spring", "CMSC 313 - Computer Organization & Assembly", "3", ""],
+                ["Year 2 - Spring", "MATH 221 - Linear Algebra", "3", ""],
+                ["Year 2 - Spring", "Science Sequence II", "4", ""],
+                ["Year 2 - Spring", "Science Lab", "2", ""],
+                ["Year 2 - Spring", "SS GEP", "3", ""],
+                ["Year 2 - Spring", "Total", "15", ""],
+
+                # ----------------- YEAR 3 -----------------
+                ["Year 3 - Fall", "CMSC 304 - Social and Ethical Issues (AH GEP, WI)", "3", ""],
+                ["Year 3 - Fall", "CMSC 411 - Computer Architecture", "3", ""],
+                ["Year 3 - Fall", "CMSC 4XX", "3", ""],
+                ["Year 3 - Fall", "STAT 355 - Probability and Statistics", "4", ""],
+                ["Year 3 - Fall", "Total", "13", ""],
+
+                ["Year 3 - Benchmarks", "", "",
+                "By end of fall, students should have completed CMSC 341, CMSC 313, "
+                "and STAT 355 with a minimum grade of C or better."
+                ],
+
+                ["Year 3 - Spring", "CMSC 421 - Operating Systems", "3", ""],
+                ["Year 3 - Spring", "CMSC 4XX", "3", ""],
+                ["Year 3 - Spring", "CMSC 4XX", "3", ""],
+                ["Year 3 - Spring", "AH GEP", "3", ""],
+                ["Year 3 - Spring", "Culture GEP", "3", ""],
+                ["Year 3 - Spring", "Total", "15", ""],
+
+                ["Year 3 - Spring Benchmarks", "", "", "None."],
+
+                # ----------------- YEAR 4 -----------------
+                ["Year 4 - Fall", "CMSC 441 - Algorithms", "3", ""],
+                ["Year 4 - Fall", "CMSC 447 - Software Engineering", "3", ""],
+                ["Year 4 - Fall", "Elective", "3", ""],
+                ["Year 4 - Fall", "Upper level elective", "3", ""],
+                ["Year 4 - Fall", "Elective", "3", ""],
+                ["Year 4 - Fall", "Total", "15", ""],
+
+                ["Year 4 - Benchmarks", "", "", "None."],
+
+                ["Year 4 - Spring", "CMSC 4XX", "3", ""],
+                ["Year 4 - Spring", "CMSC 4XX", "3", ""],
+                ["Year 4 - Spring",
+                "Elective (minimum of 8 credits, see advisor)",
+                "8",
+                ""
+                ],
+                ["Year 4 - Spring", "Total", "14", ""],
+
+                ["Year 4 - Spring Benchmarks", "", "", "None."],
+
+                # ----------------- PROGRAM TOTAL -----------------
+                ["Program Total", "Total credits", "120",
+                "Sample plan total; actual totals may vary by student."
+                ]
             ]
         }),
         active=True,
@@ -83,18 +163,41 @@ def main():
     # Degree audit schema starter: advisor will edit rows per student.
     # We'll store empty-ish table structure the advisor will fill.
     degree_audit_schema = SourceContent(
-        title="Blank Degree Audit Table Schema",
+        title="Degree Audit Template (Blank)",
         content_type="audit_table",
         body=json.dumps({
-            "columns": ["Requirement", "Satisfied By", "Status", "Credits"],
+            "columns": ["Term", "UMBC Course", "Transfer / CC Course", "Status", "Credits", "Notes"],
             "rows": [
-                # advisor fills these later per student
+                # ---------------- Year 1 ----------------
+                ["Year 1 - Fall", "", "", "", "", ""],
+                ["Year 1 - Fall", "", "", "", "", ""],
+                ["Year 1 - Fall", "", "", "", "", ""],
+                ["Year 1 - Fall", "", "", "", "", ""],
+
+                ["Year 1 - Spring", "", "", "", "", ""],
+                ["Year 1 - Spring", "", "", "", "", ""],
+                ["Year 1 - Spring", "", "", "", "", ""],
+                ["Year 1 - Spring", "", "", "", "", ""],
+
+                # ---------------- Year 2 ----------------
+                ["Year 2 - Fall", "", "", "", "", ""],
+                ["Year 2 - Fall", "", "", "", "", ""],
+                ["Year 2 - Fall", "", "", "", "", ""],
+                ["Year 2 - Fall", "", "", "", "", ""],
+
+                ["Year 2 - Spring", "", "", "", "", ""],
+                ["Year 2 - Spring", "", "", "", "", ""],
+                ["Year 2 - Spring", "", "", "", "", ""],
+                ["Year 2 - Spring", "", "", "", "", ""],
             ]
         }),
         active=True,
     )
 
+
     # Info blocks (optional sections advisor can include)
+
+    # Financial Aid
     financial_aid_info = SourceContent(
         title="Financial Aid & Deadlines (CS)",
         content_type="text",
@@ -102,11 +205,14 @@ def main():
             "Financial Aid Deadlines:\n"
             "- FAFSA priority deadline: March 1.\n"
             "- Scholarship review begins in early spring.\n\n"
-            "Please submit all transcripts to Admissions to avoid delays."
+            "Please submit all transcripts to Admissions to avoid delays.\n\n"
+            "More information for prospective students:\n"
+            "https://financialaid.umbc.edu/prospective-students/"
         ),
         active=True,
     )
 
+    #Orientation
     orientation_info = SourceContent(
         title="UMBC Orientation / Next Steps",
         content_type="text",
@@ -195,30 +301,29 @@ def main():
         ))
 
         # 5. Optional info block: Financial Aid / Deadlines
-        db_session.add(TemplateSection(
-            template_id=cs_template.id,
-            title="Financial Aid & Deadlines",
-            display_order=4,
-            section_type="info_block",
-            optional=True,
-            source_content_id=financial_aid_info.id,
-        ))
+        #db_session.add(TemplateSection(
+           # template_id=cs_template.id,
+            #title="Financial Aid & Deadlines",
+            #section_type="info_block",
+            #optional=True,
+            #source_content_id=financial_aid_info.id,
+        #))
 
         # 6. Optional info block: Orientation / Next Steps
-        db_session.add(TemplateSection(
-            template_id=cs_template.id,
-            title="Orientation / Next Steps",
-            display_order=5,
-            section_type="info_block",
-            optional=True,
-            source_content_id=orientation_info.id,
-        ))
+        #db_session.add(TemplateSection(
+           # template_id=cs_template.id,
+           # title="Orientation / Next Steps",
+           # display_order=5,
+           # section_type="info_block",
+           # optional=True,
+           # source_content_id=orientation_info.id,
+        #))
 
         # 7. Conclusion
         db_session.add(TemplateSection(
             template_id=cs_template.id,
             title="Conclusion",
-            display_order=6,
+            display_order=4,
             section_type="conclusion",
             optional=False,
             source_content_id=conclusion_block.id,

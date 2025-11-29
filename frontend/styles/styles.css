@@ -7,10 +7,25 @@ main { max-width: 1000px; margin: 24px auto; padding: 0 16px; display:grid; grid
 h1 { margin:0 0 12px; color: #000000;}
 h2 { margin:0 0 12px; color: #000000;}
 form { display:flex; gap:8px; flex-wrap: wrap; margin-bottom: 8px; }
-input, select, button { padding: 10px 12px; border-radius: 5px; background: rgb(255, 255, 255); color:black; }
+
+/* include textarea so admin forms look consistent */
+input, select, button, textarea {
+  padding: 10px 12px;
+  border-radius: 5px;
+  background: rgb(255, 255, 255);
+  color:black;
+  border: none;
+}
+
+textarea {
+  min-width: 100%;
+  resize: vertical;
+}
+
 button { cursor:pointer; background: rgb(0, 0, 0); color:rgb(255, 255, 255); }
 pre { background:#000000; padding:12px; border-radius:8px; overflow:auto; }
 #auth-status { color: var(--muted); }
+
 .optional-block {
   background:#000000;
   border:1px solid #374151;
@@ -33,4 +48,27 @@ pre { background:#000000; padding:12px; border-radius:8px; overflow:auto; }
   word-break:break-word;
   margin-top:4px;
   opacity:0.8;
+}
+.packet-section {
+  background: #000000;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 6px 0;
+}
+
+.packet-section h4 {
+  margin: 0 0 4px;
+  color: #e5e7eb;
+}
+
+.packet-section small {
+  display: block;
+  margin-bottom: 6px;
+  color: #9ca3af;
+}
+
+.packet-section.editable textarea {
+  width: 100%;
+  margin-top: 4px;
 }

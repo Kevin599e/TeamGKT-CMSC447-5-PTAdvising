@@ -15,6 +15,7 @@
   </header>
 
   <main>
+    <!-- Auth -->
     <section class="card">
       <h2>Login</h2>
       <form id="login-form">
@@ -25,6 +26,7 @@
       <button id="logout-btn" style="display:none">Logout</button>
     </section>
 
+    <!-- Advisor: create request -->
     <section class="card">
       <h2>Create Student Request</h2>
       <form id="request-form">
@@ -36,12 +38,14 @@
       </form>
     </section>
 
+    <!-- Advisor: view requests -->
     <section class="card">
       <h2>Your Student Requests</h2>
       <button id="list-requests">List Requests</button>
       <pre id="requests-output"></pre>
     </section>
 
+    <!-- Advisor: templates & builder -->
     <section class="card">
       <h2>Templates</h2>
       <button id="list-templates">List Templates</button>
@@ -54,27 +58,38 @@
         <input name="template_id_builder" placeholder="Template ID" required />
         <button type="submit">Load Template Sections</button>
       </form>
-      <div id="builder-output" style="font-size:0.9rem; line-height:1.4;">
-        <!-- we'll fill this with section info + checkboxes -->
-      </div>
+      <div id="builder-output" style="font-size:0.9rem; line-height:1.4;"></div>
     </section>
 
+    <!-- Advisor: start drafting + finalize/export -->
     <section class="card">
-      <h2>Generate Packet (with selected sections)</h2>
+      <h2>Start Drafting Packet</h2>
       <form id="packet-generate-form">
         <input name="request_id" placeholder="Student Request ID" required />
         <input name="template_id" placeholder="Template ID" required />
-        <!-- we'll dynamically insert the optional checkboxes here after builder loads -->
         <div id="packet-optional-container" style="width:100%;"></div>
-        <button type="submit">Generate Packet</button>
+
+        <!-- NEW: SourceContent selection -->
+        <div style="width:100%; margin-top:12px;">
+          <h3>Additional Info Blocks from Content Library</h3>
+          <input id="sc-search" placeholder="Search content..." />
+          <div id="sc-list"></div>
+        </div>
+        <button type="submit">Start Drafting Packet</button>
       </form>
       <pre id="packet-generate-output"></pre>
-      <h2>Finalize Form</h2>
+    </section>
+
+    <section class="card">
+      <h2>Finalize Packet</h2>
       <form id="finalize-form">
         <input name="packet_id" placeholder="Packet ID" required />
         <button type="submit">Finalize</button>
       </form>
-      <h2>Export Form</h2>
+    </section>
+
+    <section class="card">
+      <h2>Export Packet</h2>
       <form id="export-form">
         <input name="packet_id" placeholder="Packet ID" required />
         <select name="format">
@@ -83,6 +98,100 @@
         </select>
         <button type="submit">Export</button>
       </form>
+    </section>
+
+    <!-- Admin Panel -->
+    <section class="card" id="admin-panel" style="display:none;">
+      <h2>Admin: Template &amp; Content Management</h2>
+
+      <!-- Source Programs -->
+      <h3>Source Programs</h3>
+      <form id="admin-program-create-form">
+        <input name="name" placeholder="Program Name (e.g., CS BS)" required />
+        <label>
+          <input type="checkbox" name="active" checked />
+          Active
+        </label>
+        <button type="submit">Create Program</button>
+      </form>
+
+      <form id="admin-program-update-form">
+        <input name="program_id" placeholder="Program ID" required />
+        <input name="name" placeholder="New Name (optional)" />
+        <label>
+          Active:
+          <select name="active">
+            <option value="">(no change)</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </label>
+        <button type="submit">Update Program</button>
+      </form>
+
+      <button id="admin-program-list-btn" type="button">List Programs</button>
+      <pre id="admin-program-output"></pre>
+
+      <!-- Templates -->
+      <h3>Create Template</h3>
+      <form id="admin-template-create-form">
+        <input name="name" placeholder="Template Name" required />
+        <input name="program_id" placeholder="Program ID" required />
+        <label>
+          <input type="checkbox" name="active" checked />
+          Active
+        </label>
+        <button type="submit">Create Template</button>
+      </form>
+      <pre id="admin-template-create-output"></pre>
+
+      <h3>Update Template</h3>
+      <form id="admin-template-update-form">
+        <input name="template_id" placeholder="Template ID" required />
+        <input name="name" placeholder="New Name (optional)" />
+        <input name="program_id" placeholder="New Program ID (optional)" />
+        <label>
+          Active:
+          <select name="active">
+            <option value="">(no change)</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </label>
+        <button type="submit">Update Template</button>
+      </form>
+      <pre id="admin-template-update-output"></pre>
+
+      <!-- Template Sections -->
+      <h3>Add Section to Template</h3>
+      <form id="admin-section-create-form">
+        <input name="template_id" placeholder="Template ID" required />
+        <input name="title" placeholder="Section Title" required />
+        <input name="section_type" placeholder="Section Type (intro, info_block, ...)" required />
+        <input name="display_order" placeholder="Display Order (optional)" />
+        <label>
+          <input type="checkbox" name="optional" />
+          Optional section
+        </label>
+        <input name="source_content_id" placeholder="SourceContent ID (optional)" />
+        <button type="submit">Add Section</button>
+      </form>
+      <pre id="admin-section-create-output"></pre>
+
+      <!-- Source Content -->
+      <h3>Source Content</h3>
+      <form id="admin-source-content-create-form">
+        <input name="title" placeholder="Title" required />
+        <input name="content_type" placeholder="Content Type (text, markdown, ...)" value="text" />
+        <textarea name="body" placeholder="Body" required rows="3"></textarea>
+        <label>
+          <input type="checkbox" name="active" checked />
+          Active
+        </label>
+        <button type="submit">Create Source Content</button>
+      </form>
+      <button id="admin-source-content-list-btn" type="button">List Source Content</button>
+      <pre id="admin-source-content-output"></pre>
     </section>
   </main>
 
