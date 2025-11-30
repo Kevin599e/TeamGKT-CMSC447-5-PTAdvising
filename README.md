@@ -17,9 +17,9 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp ../.env.example .env  # then edit values
+cp ../.env.example .env  # then edit values (optional)
 $env:PYTHONPATH = "."
-python scripts/seed.py    # creates an admin user (admin@umbc.edu / Passw0rd! — change it)
+python scripts/seed.py # Seed data of users' credentials and initial data for the database. 
 flask --app app run --debug
 ```
 
