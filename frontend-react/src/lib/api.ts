@@ -1,12 +1,12 @@
-// src/lib/api.ts — strict typing, no 'any'
+// src/lib/api.ts
 
-// Read from Vite env or fall back to proxy "/api"
 const { VITE_API_BASE, DEV } = import.meta.env;
+
+// In dev, DO NOT set VITE_API_BASE. Let it fall back to "/api"
 const API_BASE = VITE_API_BASE && VITE_API_BASE.length > 0 ? VITE_API_BASE : "/api";
 
 function log(...args: unknown[]) {
   if (DEV) {
-    // Using console.debug intentionally in dev
     console.debug("[api]", ...args);
   }
 }
@@ -20,7 +20,7 @@ export async function api<
   const opts: RequestInit = {
     method,
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
+    credentials: "include", // important for session cookies
   };
 
   if (data && method.toUpperCase() !== "GET") {

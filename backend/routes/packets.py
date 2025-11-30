@@ -12,6 +12,7 @@ from services.docx_service import render_packet_docx
 from services.latex_service import render_packet_pdf
 import os
 import json
+from flask import send_from_directory
 from datetime import datetime
 
 packets_bp = Blueprint("packets", __name__)
@@ -263,7 +264,6 @@ def finalize():
 
     return {"id": p.id, "status": p.status}
 
-
 @packets_bp.post("/export")
 def export():
     ok, err = require_auth()
@@ -290,7 +290,18 @@ def export():
         )
         if err_msg:
             return {"error": err_msg}, 500
-        return {"path": pdf_path}
+
+        # 🔧 normalize Windows backslashes to URL-style forward slashes
+        web_path = pdf_path.replace("\\", "/")
+        return {"path": web_path}
 
     path = render_packet_docx(p, sections, export_dir=export_dir)
-    return {"path": path}
+
+    # 🔧 normalize here too
+    web_path = path.replace("\\", "/")  # e.g. "exports/packet_1.docx"
+    return {"path": web_path}
+
+EXPORT_DIR = os.path.abspath("exports")
+@packets_bp.get("/exports/<path:filename>")
+def download_export(filename):
+    return send_from_directory(EXPORT_DIR, filename, as_attachment=True)

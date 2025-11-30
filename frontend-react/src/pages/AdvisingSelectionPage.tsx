@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../lib/api";
+// hardcode backend origin for file downloads (OK to be cross-origin)
+const BACKEND_ORIGIN = "http://127.0.0.1:5000";
 import { Container, errorMessage, firstArrayFrom } from "../lib/ui";
+
 
 type TemplateItem = { id: number; name: string };
 
@@ -38,6 +41,13 @@ export default function AdvisingSelectionPage() {
   const [loadingTpl, setLoadingTpl] = useState(false);
   const [loadingSections, setLoadingSections] = useState(false);
   const [errTpl, setErrTpl] = useState<string | null>(null);
+  // NEW: text input for packetId
+  const [packetIdInput, setPacketIdInput] = useState<string>("");
+  useEffect(() => {
+  if (packetId != null) {
+    setPacketIdInput(String(packetId));
+    }
+  }, [packetId]);
 
   useEffect(() => {
     // load available templates on mount
@@ -362,39 +372,68 @@ export default function AdvisingSelectionPage() {
               >
                 Generate Packet
               </button>
+              {/* NEW: Packet ID input before export */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-zinc-600">
+                  Packet ID:
+                  <input
+                    type="number"
+                    min={1}
+                    className="ml-2 w-24 rounded-md border border-zinc-300 px-2 py-1 text-xs"
+                    value={packetIdInput}
+                    onChange={(e) => setPacketIdInput(e.target.value)}
+                    placeholder="e.g. 1"
+                  />
+                </label>
+                <button
+                  className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200"
+                  onClick={async (e) => {
+                    e.preventDefault();
 
-              <button
-                className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200"
-                onClick={async (e) => {
-                  e.preventDefault();
-                  try {
-                    const out = await api<{ path: string }>("/packets/export", "POST", {
-                      packet_id: packetId,
-                      format: "docx",
-                    });
-
-                    if (!out.path) {
-                      alert("Export failed: no file path returned.");
+                    const parsed = Number(packetIdInput);
+                    if (!packetIdInput.trim() || Number.isNaN(parsed) || parsed <= 0) {
+                      alert("Enter a valid Packet ID before exporting.");
                       return;
                     }
 
-                    const url = out.path.startsWith("http")
-                      ? out.path
-                      : `${window.location.origin}/${out.path}`;
+                    try {
+                      const out = await api<{ path: string }>("/packets/export", "POST", {
+                        packet_id: parsed,
+                        format: "docx",
+                      });
 
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = url.split("/").pop() || "download";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  } catch (err) {
-                    alert(errorMessage(err) || "Failed to export packet");
-                  }
-                }}
-              >
-                Export Packet (DOCX)
-              </button>
+                      if (!out.path) {
+                        alert("Export failed: no file path returned.");
+                        return;
+                      }
+
+                      // Normalize Windows-style backslashes -> URL-style forward slashes
+                      let clean = out.path.replace(/\\/g, "/"); // e.g. "exports/packet_1.docx" or "/exports/packet_1.docx"
+
+                      // Ensure exactly one leading slash before "exports/..."
+                      if (!clean.startsWith("/")) {
+                        clean = `/${clean}`; // "/exports/packet_1.docx"
+                      }
+
+                      // Build full URL served by Flask
+                      // Assumes backend route: GET /api/packets/exports/<filename>
+                      const fileUrl = `http://127.0.0.1:5000/api/packets${clean}`;
+                      // -> "http://127.0.0.1:5000/api/packets/exports/packet_1.docx"
+
+                      const link = document.createElement("a");
+                      link.href = fileUrl;
+                      link.download = clean.split("/").pop() || "packet.docx";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    } catch (err) {
+                      alert((err as Error).message || "Failed to export packet");
+                    }
+                  }}
+                >
+                  Export Packet (DOCX)
+                </button>
+              </div>
             </div>
           </form>
         </section>
