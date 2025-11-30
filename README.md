@@ -32,7 +32,7 @@ On a new terminal, use a static server:
 cd frontend
 python -m http.server 5173
 ```
-Visit the site: https://127.0.0.1:5173
+Visit the site: http://127.0.0.1:5173
 ## Default Roles
 - **admin**: manage templates & sections
 - **advisor**: create student requests and packets
