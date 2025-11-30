@@ -6,7 +6,8 @@ import {
   Link,
   NavLink,
   useLocation,
-  useNavigate,
+  Outlet,
+  Navigate,
 } from "react-router-dom";
 import { api } from "./lib/api";
 import { Container } from "./lib/ui";
@@ -16,27 +17,45 @@ import HomePage from "./pages/HomePage";
 import RecordsPage from "./pages/RecordsPage";
 import AdvisingCasePage from "./pages/AdvisingCasePage";
 import AdvisingSelectionPage from "./pages/AdvisingSelectionPage";
+import AdminPage from "./pages/AdminPage";
 
 // ---------- Auth helpers ---------- //
-function RequireAuth({ children }: { children: React.ReactNode }) {
-  const navigate = useNavigate();
-  const [ok, setOk] = useState<boolean | null>(null);
+function RequireAuth() {
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        await api("/auth/me");
-        setOk(true);
+        // /api/auth/me returns {id, role} when logged in,
+        // and {user: null} when not logged in.
+        const me = await api<{ id?: number; user?: unknown }>("/auth/me");
+
+        if (me && typeof me.id === "number") {
+          // Logged in
+          setAuthorized(true);
+        } else {
+          // Not logged in (e.g., { user: null })
+          setAuthorized(false);
+        }
       } catch {
-        setOk(false);
-        navigate("/login", { replace: true });
+        // Network or other error -> treat as not authorized
+        setAuthorized(false);
       }
     })();
-  }, [navigate]);
+  }, []);
 
-  if (ok === null) return null;
-  if (ok === false) return null;
-  return <>{children}</>;
+  // Still loading auth state
+  if (authorized === null) {
+    return null;
+  }
+
+  // Not authorized: redirect to login
+  if (authorized === false) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Authorized: render nested protected routes
+  return <Outlet />;
 }
 
 // ---------- Theme init ---------- //
@@ -54,6 +73,19 @@ function useThemeInit() {
 
 // ---------- Top Nav & Footer ---------- //
 function AppNav() {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const me = await api<{ role?: string }>("/auth/me");
+        setIsAdmin(me.role === "admin");
+      } catch {
+        setIsAdmin(false);
+      }
+    })();
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 border-b bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-zinc-950/70">
       <Container>
@@ -118,6 +150,11 @@ function AppNav() {
                 <NavLink to="/advising" className={active}>
                   Advising Case
                 </NavLink>
+                {isAdmin && (
+                  <NavLink to="/admin" className={active}>
+                    Admin
+                  </NavLink>
+                )}
               </>
             );
           })()}
@@ -167,47 +204,21 @@ function InnerApp() {
     <div className="min-h-dvh bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-50">
       {!onLogin && <AppNav />}
       <Routes>
+        {/* Public route */}
         <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/"
-          element={
-            <RequireAuth>
-              <HomePage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/records"
-          element={
-            <RequireAuth>
-              <RecordsPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/advising"
-          element={
-            <RequireAuth>
-              <AdvisingCasePage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/advising/new"
-          element={
-            <RequireAuth>
-              <AdvisingSelectionPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/advising/request/:requestId"
-          element={
-            <RequireAuth>
-              <AdvisingSelectionPage />
-            </RequireAuth>
-          }
-        />
+
+        {/* Protected routes */}
+        <Route element={<RequireAuth />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/records" element={<RecordsPage />} />
+          <Route path="/advising" element={<AdvisingCasePage />} />
+          <Route path="/advising/new" element={<AdvisingSelectionPage />} />
+          <Route
+            path="/advising/request/:requestId"
+            element={<AdvisingSelectionPage />}
+          />
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
       </Routes>
       {!onLogin && <AppFooter />}
     </div>
