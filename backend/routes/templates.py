@@ -335,7 +335,7 @@ def delete_template_section(section_id):
     return {"status": "ok"}
 
 
-@templates_bp.get("/source-content")
+@templates_bp.get("/source-content/admin")
 @admin_required
 def list_source_content():
     """

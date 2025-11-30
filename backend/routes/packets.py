@@ -17,12 +17,10 @@ from datetime import datetime
 
 packets_bp = Blueprint("packets", __name__)
 
-
 def require_auth():
     if "uid" not in session:
         return False, ({"error": "Unauthorized"}, 401)
     return True, None
-
 
 def render_intro_text(intro_source_body: str, student_req: StudentRequest) -> str:
     """
@@ -44,7 +42,7 @@ def add_info_block_to_packet(packet_id):
       {
         "source_content_id": 5,
         "title": "Optional override title",  # optional
-        "display_order": 4                   # optional
+        "display_order": 4                   # optional (rarely needed now)
       }
     """
     from models import Packet, PacketSection, SourceContent
@@ -52,6 +50,10 @@ def add_info_block_to_packet(packet_id):
     packet = db_session.query(Packet).get(packet_id)
     if not packet:
         return {"error": "Packet not found"}, 404
+
+    # Only allow edits while draft
+    if packet.status != "draft":
+        return {"error": "Cannot modify a finalized packet"}, 400
 
     data = request.get_json() or {}
     sc_id = data.get("source_content_id")
@@ -62,19 +64,44 @@ def add_info_block_to_packet(packet_id):
     if not sc or not sc.active:
         return {"error": "SourceContent not found or inactive"}, 404
 
-    # Default display_order: append to end
-    if "display_order" in data:
-        display_order = int(data["display_order"])
+    # Take a snapshot of current sections ordered by display_order
+    sections = sorted(packet.sections, key=lambda s: s.display_order)
+
+    # If caller explicitly supplies a display_order, respect it and shift others
+    if "display_order" in data and data["display_order"] is not None:
+        try:
+            insert_order = int(data["display_order"])
+        except (ValueError, TypeError):
+            return {"error": "display_order must be an integer"}, 400
+
+        # Shift any section at or after this order
+        for ps in sections:
+            if ps.display_order >= insert_order:
+                ps.display_order += 1
     else:
-        max_order = max((s.display_order for s in packet.sections), default=0)
-        display_order = max_order + 1
+        # No explicit order -> insert before the first "conclusion" section, if any.
+        first_conclusion_order = None
+        for ps in sections:
+            if ps.section_type == "conclusion":
+                first_conclusion_order = ps.display_order
+                break
+
+        if first_conclusion_order is None:
+            # No conclusion → append at the end
+            insert_order = sections[-1].display_order + 1 if sections else 1
+        else:
+            insert_order = first_conclusion_order
+            # Shift all sections at or after this order down by 1 slot
+            for ps in sections:
+                if ps.display_order >= insert_order:
+                    ps.display_order += 1
 
     title = data.get("title") or sc.title
 
     new_sec = PacketSection(
         packet_id=packet.id,
         title=title,
-        display_order=display_order,
+        display_order=insert_order,
         section_type="info_block",
         content_type=sc.content_type,
         content=sc.body,
@@ -92,6 +119,7 @@ def add_info_block_to_packet(packet_id):
         "content_type": new_sec.content_type,
         "content": new_sec.content,
     }, 201
+
 
 @packets_bp.post("/generate")
 def generate_packet():
@@ -305,3 +333,22 @@ EXPORT_DIR = os.path.abspath("exports")
 @packets_bp.get("/exports/<path:filename>")
 def download_export(filename):
     return send_from_directory(EXPORT_DIR, filename, as_attachment=True)
+
+
+@packets_bp.post("/<int:packet_id>/info-blocks")
+def add_info_block_route(packet_id):
+    """
+    Advisor: add a SourceContent info block to an existing Packet.
+
+    Body:
+      {
+        "source_content_id": 5,
+        "title": "Optional override title",  # optional
+        "display_order": 4                   # optional
+      }
+    """
+    ok, err = require_auth()
+    if not ok:
+        return err
+
+    return add_info_block_to_packet(packet_id)

@@ -15,7 +15,7 @@ import { Container } from "./lib/ui";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import RecordsPage from "./pages/RecordsPage";
-import AdvisingCasePage from "./pages/AdvisingCasePage";
+//import AdvisingCasePage from "./pages/AdvisingCasePage";
 import AdvisingSelectionPage from "./pages/AdvisingSelectionPage";
 import AdminPage from "./pages/AdminPage";
 
@@ -145,10 +145,10 @@ function AppNav() {
                   Home
                 </NavLink>
                 <NavLink to="/records" className={active}>
-                  Records
+                  Advising Requests
                 </NavLink>
                 <NavLink to="/advising" className={active}>
-                  Advising Case
+                  Making Advising Packets
                 </NavLink>
                 {isAdmin && (
                   <NavLink to="/admin" className={active}>
@@ -211,12 +211,22 @@ function InnerApp() {
         <Route element={<RequireAuth />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/records" element={<RecordsPage />} />
-          <Route path="/advising" element={<AdvisingCasePage />} />
-          <Route path="/advising/new" element={<AdvisingSelectionPage />} />
+
+          {/* ⬇️ Changed: /advising now goes straight to AdvisingSelectionPage */}
+          <Route path="/advising" element={<AdvisingSelectionPage />} />
+
+          {/* ⬇️ Optional: keep /advising/new as a redirect for backward compatibility */}
+          <Route
+            path="/advising/new"
+            element={<Navigate to="/advising" replace />}
+          />
+
+          {/* Still allow deep links for a specific request */}
           <Route
             path="/advising/request/:requestId"
             element={<AdvisingSelectionPage />}
           />
+
           <Route path="/admin" element={<AdminPage />} />
         </Route>
       </Routes>

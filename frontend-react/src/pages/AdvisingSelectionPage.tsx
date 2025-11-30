@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../lib/api";
-// hardcode backend origin for file downloads (OK to be cross-origin)
-const BACKEND_ORIGIN = "http://127.0.0.1:5000";
 import { Container, errorMessage, firstArrayFrom } from "../lib/ui";
 
+const BACKEND_ORIGIN = "http://127.0.0.1:5000";
 
-type TemplateItem = { id: number; name: string };
+type TemplateItem = { id: number; name: string; program_name?: string | null };
 
 interface BuilderSection {
   template_section_id: number;
@@ -14,52 +13,109 @@ interface BuilderSection {
   section_type?: string;
   display_order?: number;
   optional?: boolean;
-  is_default?: boolean;
 }
 
-interface FormState {
-  first: string;
-  last: string;
-  email: string;
-  inst: string;
-  major: string;
+interface RequestItem {
+  id: number;
+  student_name: string;
+  student_email: string;
+  source_institution: string;
+  target_program?: string | null;
 }
+
+interface SourceContentItem {
+  id: number;
+  title: string;
+  content_type: string;
+  body_preview: string;
+}
+
+type PacketStatus = "draft" | "finalized" | null;
 
 export default function AdvisingSelectionPage() {
   const params = useParams();
   const initialRequestId = params.requestId ? Number(params.requestId) : null;
+
+  // ---- Requests ----
+  const [requests, setRequests] = useState<RequestItem[]>([]);
   const [requestId, setRequestId] = useState<number | null>(initialRequestId);
-  const [packetId, setPacketId] = useState<number | null>(null);
+  const [loadingReq, setLoadingReq] = useState(false);
+  const [errReq, setErrReq] = useState<string | null>(null);
 
-  const [form, setForm] = useState<FormState>({ first: "", last: "", email: "", inst: "", major: "" });
-
-  // ---- Templates & Sections from backend ----
+  // ---- Templates & sections ----
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [templateId, setTemplateId] = useState<number | null>(null);
   const [sections, setSections] = useState<BuilderSection[]>([]);
   const [selectedSections, setSelectedSections] = useState<number[]>([]);
   const [loadingTpl, setLoadingTpl] = useState(false);
-  const [loadingSections, setLoadingSections] = useState(false);
   const [errTpl, setErrTpl] = useState<string | null>(null);
-  // NEW: text input for packetId
+  const [loadingSections, setLoadingSections] = useState(false);
+
+  // ---- Packet ----
+  const [packetId, setPacketId] = useState<number | null>(null);
+  const [packetStatus, setPacketStatus] = useState<PacketStatus>(null);
   const [packetIdInput, setPacketIdInput] = useState<string>("");
+
+  // ---- Extra SourceContent info blocks ----
+  const [infoBlocks, setInfoBlocks] = useState<SourceContentItem[]>([]);
+  const [loadingInfoBlocks, setLoadingInfoBlocks] = useState(false);
+  const [errInfoBlocks, setErrInfoBlocks] = useState<string | null>(null);
+
   useEffect(() => {
-  if (packetId != null) {
-    setPacketIdInput(String(packetId));
+    if (packetId != null) {
+      setPacketIdInput(String(packetId));
     }
   }, [packetId]);
 
+  const currentRequest = requestId
+    ? requests.find((r) => r.id === requestId) || null
+    : null;
+
+  const currentTemplate = templateId
+    ? templates.find((t) => t.id === templateId) || null
+    : null;
+
+  // ---------- Load Requests ----------
   useEffect(() => {
-    // load available templates on mount
+    (async () => {
+      setLoadingReq(true);
+      setErrReq(null);
+      try {
+        const res = await api<unknown>("/requests");
+        const arr = firstArrayFrom(res);
+        const mapped: RequestItem[] = arr.map((r: any) => ({
+          id: Number(r.id ?? r.request_id),
+          student_name: String(r.student_name ?? ""),
+          student_email: String(r.student_email ?? ""),
+          source_institution: String(r.source_institution ?? ""),
+          target_program: r.target_program ? String(r.target_program) : "",
+        }));
+        setRequests(mapped);
+
+        if (!requestId && mapped[0]) {
+          setRequestId(mapped[0].id);
+        }
+      } catch (e) {
+        setErrReq(errorMessage(e));
+      } finally {
+        setLoadingReq(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ---------- Load Templates ----------
+  useEffect(() => {
     (async () => {
       setLoadingTpl(true);
       setErrTpl(null);
       try {
         const res = await api<unknown>("/templates");
         const arr = firstArrayFrom(res);
-        const mapped = arr.map((t) => ({
-          id: Number(t["id"] ?? t["template_id"]),
-          name: String(t["name"] ?? t["title"] ?? "Template"),
+        const mapped: TemplateItem[] = arr.map((t: any) => ({
+          id: Number(t.id ?? t.template_id),
+          name: String(t.name ?? t.title ?? "Template"),
+          program_name: t.program_name ?? null,
         }));
         setTemplates(mapped);
         if (!templateId && mapped[0]) setTemplateId(mapped[0].id);
@@ -72,8 +128,8 @@ export default function AdvisingSelectionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---------- Load template sections (preview) ----------
   useEffect(() => {
-    // load sections for the chosen template
     if (!templateId) {
       setSections([]);
       setSelectedSections([]);
@@ -82,22 +138,29 @@ export default function AdvisingSelectionPage() {
     (async () => {
       setLoadingSections(true);
       try {
-        const res = await api<Record<string, unknown>>(`/templates/${templateId}/builder`);
-        const arr = firstArrayFrom((res as Record<string, unknown>)["sections"] ?? res);
-        const mapped: BuilderSection[] = arr.map((rec) => ({
-          template_section_id: Number((rec["template_section_id"] ?? rec["id"]) as number),
-          title: String((rec["title"] ?? rec["name"] ?? "Section") as string),
-          section_type: rec["section_type"] as string | undefined,
-          display_order: Number((rec["display_order"] ?? 0) as number),
-          optional: Boolean((rec["optional"] ?? false) as boolean),
-          is_default: Boolean((rec["is_default"] ?? false) as boolean),
+        const res = await api<Record<string, unknown>>(
+          `/templates/${templateId}/builder`,
+        );
+        const arr = firstArrayFrom(
+          (res as Record<string, unknown>)["sections"] ?? res,
+        );
+        const mapped: BuilderSection[] = arr.map((rec: any) => ({
+          template_section_id: Number(rec.template_section_id ?? rec.id),
+          title: String(rec.title ?? rec.name ?? "Section"),
+          section_type: rec.section_type as string | undefined,
+          display_order: Number(rec.display_order ?? 0),
+          optional: Boolean(rec.optional ?? false),
         }));
-        // sort and preselect defaults + all non-optional
-        mapped.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+        mapped.sort(
+          (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0),
+        );
         setSections(mapped);
+
+        // Default: required sections pre-selected
         setSelectedSections([
-          ...mapped.filter((s) => !s.optional).map((s) => s.template_section_id),
-          ...mapped.filter((s) => s.optional && s.is_default).map((s) => s.template_section_id),
+          ...mapped
+            .filter((s) => !s.optional)
+            .map((s) => s.template_section_id),
         ]);
       } finally {
         setLoadingSections(false);
@@ -105,108 +168,288 @@ export default function AdvisingSelectionPage() {
     })();
   }, [templateId]);
 
+  // ---------- Load extra SourceContent blocks ----------
+  useEffect(() => {
+    (async () => {
+      setLoadingInfoBlocks(true);
+      setErrInfoBlocks(null);
+      try {
+        const res = await api<{ items: any[] }>("/templates/source-content");
+        const items = res.items || [];
+        const mapped: SourceContentItem[] = items.map((sc: any) => ({
+          id: Number(sc.id),
+          title: String(sc.title ?? "Untitled"),
+          content_type: String(sc.content_type ?? "text"),
+          body_preview: String(sc.body_preview ?? ""),
+        }));
+        setInfoBlocks(mapped);
+      } catch (e) {
+        setErrInfoBlocks(errorMessage(e));
+      } finally {
+        setLoadingInfoBlocks(false);
+      }
+    })();
+  }, []);
+
   function toggleSection(id: number) {
-    setSelectedSections((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    // Once packet is generated, these choices are baked in (no PATCH route yet)
+    if (packetId) {
+      alert(
+        "This draft has already been generated. To change included sections, create a new packet draft.",
+      );
+      return;
+    }
+    setSelectedSections((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  // ---------- Start Draft (Generate Packet) ----------
+  async function handleStartDraft(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!requestId) {
+      alert("Select a Request first.");
+      return;
+    }
+    if (!templateId) {
+      alert("Select a Template first.");
+      return;
+    }
+    if (!selectedSections.length) {
+      const ok = window.confirm(
+        "You have not selected any sections. Generate an empty packet draft?",
+      );
+      if (!ok) return;
+    }
+
+    try {
+      const payload = {
+        request_id: requestId,
+        template_id: templateId,
+        include_section_ids: selectedSections,
+      };
+      const res = await api<{
+        id?: number;
+        packet_id?: number;
+        status?: string;
+        sections?: any[];
+      }>("/packets/generate", "POST", payload);
+
+      const pid = res.id ?? res.packet_id;
+      if (!pid) {
+        alert("Backend did not return a packet ID.");
+        return;
+      }
+      setPacketId(Number(pid));
+      setPacketStatus((res.status as PacketStatus) || "draft");
+      setPacketIdInput(String(pid));
+      alert("Packet draft generated and saved.");
+    } catch (err) {
+      alert(errorMessage(err) || "Failed to generate packet");
+    }
+  }
+
+  // ---------- Finalize Packet ----------
+  async function handleFinalize(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!packetId) {
+      alert("No packet to finalize. Generate a draft first.");
+      return;
+    }
+
+    try {
+      const res = await api<{ id?: number; status?: string }>(
+        "/packets/finalize",
+        "POST",
+        { packet_id: packetId },
+      );
+      setPacketStatus((res.status as PacketStatus) || "finalized");
+      alert("Packet finalized.");
+    } catch (err) {
+      alert(errorMessage(err) || "Failed to finalize packet");
+    }
+  }
+
+  // ---------- Export Packet ----------
+  async function handleExport(e: React.MouseEvent) {
+    e.preventDefault();
+
+    const parsed = Number(packetIdInput);
+    if (!packetIdInput.trim() || Number.isNaN(parsed) || parsed <= 0) {
+      alert("Enter a valid Packet ID before exporting.");
+      return;
+    }
+
+    try {
+      const out = await api<{ path: string }>("/packets/export", "POST", {
+        packet_id: parsed,
+        format: "docx",
+      });
+
+      if (!out.path) {
+        alert("Export failed: no file path returned.");
+        return;
+      }
+
+      // Normalize to "/exports/packet_1.docx"
+      let clean = out.path.replace(/\\/g, "/");
+      if (!clean.startsWith("/")) {
+        clean = `/${clean}`;
+      }
+
+      const fileUrl = `${BACKEND_ORIGIN}/api/packets${clean}`;
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = clean.split("/").pop() || "packet.docx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      alert((err as Error).message || "Failed to export packet");
+    }
+  }
+
+  // ---------- Add info block to existing packet ----------
+  async function handleAddInfoBlock(sc: SourceContentItem) {
+    if (!packetId) {
+      alert("Generate a packet draft first before adding extra info blocks.");
+      return;
+    }
+    if (packetStatus === "finalized") {
+      alert("This packet is finalized and can no longer be modified.");
+      return;
+    }
+
+    try {
+      await api(
+        `/packets/${packetId}/info-blocks`,
+        "POST",
+        {
+          source_content_id: sc.id,
+          // Optional: title / display_order overrides
+        },
+      );
+      alert(`Added info block: "${sc.title}" to packet #${packetId}.`);
+      // If you later show packet sections, you can re-fetch them here.
+    } catch (err) {
+      alert(errorMessage(err) || "Failed to add info block to packet");
+    }
   }
 
   return (
     <main className="py-10">
       <Container>
         <section className="rounded-2xl border p-6">
-          <h1 className="text-xl font-semibold tracking-tight">Advising Selection</h1>
+          <h1 className="text-xl font-semibold tracking-tight">
+            Advising Packet Drafting
+          </h1>
+
           <div className="mt-1 text-xs text-zinc-500">
             {requestId && (
               <span className="mr-3">
-                Request ID: <strong className="text-zinc-700">{requestId}</strong>
+                Request ID:{" "}
+                <strong className="text-zinc-700">{requestId}</strong>
               </span>
             )}
             {packetId && (
+              <span className="mr-3">
+                Packet ID:{" "}
+                <strong className="text-zinc-700">{packetId}</strong>
+              </span>
+            )}
+            {packetStatus && (
               <span>
-                Packet ID: <strong className="text-zinc-700">{packetId}</strong>
+                Status:{" "}
+                <strong className="uppercase text-zinc-700">
+                  {packetStatus}
+                </strong>
               </span>
             )}
           </div>
+
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-            Fill in student details. Major selection will show example prompts (demo only).
+            1) Choose an existing student request. 2) Select a template and
+            preview sections. 3) Generate a draft packet, optionally add extra
+            info blocks, finalize, and export.
           </p>
 
-          <form className="mt-6 grid gap-5">
-            {/* Name */}
-            <div className="grid gap-3 sm:grid-cols-2">
+          <form className="mt-6 grid gap-6">
+            {/* Step 1: Request selection */}
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)]">
               <div className="grid gap-1.5">
-                <label htmlFor="first" className="text-sm font-medium">
-                  First Name
+                <label className="text-sm font-medium">
+                  Step 1 – Student Request
                 </label>
-                <input
-                  id="first"
-                  value={form.first}
-                  onChange={(e) => setForm({ ...form, first: e.target.value })}
-                  className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-500 outline-none focus:ring-2 focus:ring-amber-400 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
-                />
+                <select
+                  value={requestId ?? ""}
+                  onChange={(e) =>
+                    setRequestId(
+                      e.target.value ? Number(e.target.value) : null,
+                    )
+                  }
+                  className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+                >
+                  <option value="" disabled>
+                    {loadingReq
+                      ? "Loading requests…"
+                      : errReq
+                      ? `Error: ${errReq}`
+                      : "Select a request"}
+                  </option>
+                  {requests.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {`${r.id} – ${r.student_name || "Unknown"} – ${
+                        r.source_institution || "N/A"
+                      }`}
+                    </option>
+                  ))}
+                </select>
+                {!loadingReq && !errReq && !requests.length && (
+                  <p className="text-xs text-zinc-500">
+                    No requests found. Advisors must create student requests on
+                    the Requests page first.
+                  </p>
+                )}
               </div>
-              <div className="grid gap-1.5">
-                <label htmlFor="last" className="text-sm font-medium">
-                  Last Name
-                </label>
-                <input
-                  id="last"
-                  value={form.last}
-                  onChange={(e) => setForm({ ...form, last: e.target.value })}
-                  className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-500 outline-none focus:ring-2 focus:ring-amber-400 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
-                />
+
+              <div className="rounded-xl border bg-zinc-50 p-3 text-xs dark:bg-zinc-900 dark:border-zinc-700">
+                {currentRequest ? (
+                  <div className="space-y-1">
+                    <div>
+                      <span className="font-semibold">Name:</span>{" "}
+                      {currentRequest.student_name || "—"}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Email:</span>{" "}
+                      {currentRequest.student_email || "—"}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Institution:</span>{" "}
+                      {currentRequest.source_institution || "—"}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Target program:</span>{" "}
+                      {currentRequest.target_program || "—"}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-500">
+                    Select a request to see student and program information.
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Emails */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <label htmlFor="email" className="text-sm font-medium">
-                  Student Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-500 outline-none focus:ring-2 focus:ring-amber-400 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <label htmlFor="inst" className="text-sm font-medium">
-                  Student Institutional Email
-                </label>
-                <input
-                  id="inst"
-                  type="email"
-                  value={form.inst}
-                  onChange={(e) => setForm({ ...form, inst: e.target.value })}
-                  className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-500 outline-none focus:ring-2 focus:ring-amber-400 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
-                />
-              </div>
-            </div>
-
-            {/* Major */}
-            <div className="grid gap-1.5">
-              <label htmlFor="major" className="text-sm font-medium">
-                Intended Major
-              </label>
-              <select
-                id="major"
-                value={form.major}
-                onChange={(e) => setForm({ ...form, major: e.target.value })}
-                className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-500 outline-none focus:ring-2 focus:ring-amber-400 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
-              >
-                <option value="">Select a major…</option>
-                <option value="general">General</option>
-              </select>
-            </div>
-
-            {/* Sections from selected template */}
+            {/* Step 2: Template & sections */}
             <div className="grid gap-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Template & Sections</label>
+                <label className="text-sm font-medium">
+                  Step 2 – Template & Sections
+                </label>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-zinc-500">Selected: {selectedSections.length}</span>
+                  <span className="text-zinc-500">
+                    Sections selected for draft: {selectedSections.length}
+                  </span>
                 </div>
               </div>
 
@@ -215,11 +458,18 @@ export default function AdvisingSelectionPage() {
                   <label className="text-xs text-zinc-500">Template</label>
                   <select
                     value={templateId ?? ""}
-                    onChange={(e) => setTemplateId(e.target.value ? Number(e.target.value) : null)}
-                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm"
+                    onChange={(e) =>
+                      setTemplateId(
+                        e.target.value ? Number(e.target.value) : null,
+                      )
+                    }
+                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+                    disabled={!requestId}
                   >
                     <option value="" disabled>
-                      {loadingTpl
+                      {!requestId
+                        ? "Select a request first"
+                        : loadingTpl
                         ? "Loading templates…"
                         : errTpl
                         ? `Error: ${errTpl}`
@@ -228,59 +478,80 @@ export default function AdvisingSelectionPage() {
                     {templates.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.name}
+                        {t.program_name ? ` – ${t.program_name}` : ""}
                       </option>
                     ))}
                   </select>
+                  {currentTemplate && (
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Program:{" "}
+                      <span className="font-medium">
+                        {currentTemplate.program_name || "—"}
+                      </span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid gap-2">
-                  <label className="text-xs text-zinc-500">Quick actions</label>
+                  <label className="text-xs text-zinc-500">
+                    Quick section presets
+                  </label>
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="rounded border border-black bg-zinc-100 px-2 py-1 text-xs"
-                      onClick={() =>
-                        setSelectedSections(sections.filter((s) => !s.optional).map((s) => s.template_section_id))
-                      }
-                    >
-                      Required only
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded border border-black bg-zinc-100 px-2 py-1 text-xs"
-                      onClick={() => setSelectedSections(sections.map((s) => s.template_section_id))}
-                    >
-                      Select all
-                    </button>
                     <button
                       type="button"
                       className="rounded border border-black bg-zinc-100 px-2 py-1 text-xs"
                       onClick={() =>
                         setSelectedSections(
                           sections
-                            .filter((s) => s.optional && s.is_default)
+                            .filter((s) => !s.optional)
                             .map((s) => s.template_section_id),
                         )
                       }
+                      disabled={!templateId || !!packetId}
                     >
-                      Defaults
+                      Required only
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded border border-black bg-zinc-100 px-2 py-1 text-xs"
+                      onClick={() =>
+                        setSelectedSections(
+                          sections.map((s) => s.template_section_id),
+                        )
+                      }
+                      disabled={!templateId || !!packetId}
+                    >
+                      Select all
                     </button>
                     <button
                       type="button"
                       className="rounded border border-black bg-zinc-100 px-2 py-1 text-xs"
                       onClick={() => setSelectedSections([])}
+                      disabled={!templateId || !!packetId}
                     >
                       Clear
                     </button>
                   </div>
+                  {packetId && (
+                    <p className="mt-1 text-[11px] text-zinc-500">
+                      Section selection is locked for this draft. To change, you
+                      can generate a new packet draft.
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="rounded-2xl border p-4">
                 {loadingSections ? (
                   <p className="text-sm text-zinc-700">Loading sections…</p>
+                ) : !templateId ? (
+                  <p className="text-sm text-zinc-700">
+                    Choose a template to view sections.
+                  </p>
                 ) : sections.length === 0 ? (
-                  <p className="text-sm text-zinc-700">Choose a template to view sections.</p>
+                  <p className="text-sm text-zinc-700">
+                    This template has no sections configured.
+                  </p>
                 ) : (
                   <ul className="space-y-2">
                     {sections.map((s) => (
@@ -289,7 +560,9 @@ export default function AdvisingSelectionPage() {
                         className="flex items-center justify-between gap-3 rounded-xl border p-3"
                       >
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-medium">{s.title}</div>
+                          <div className="truncate text-sm font-medium">
+                            {s.title}
+                          </div>
                           <div className="text-xs text-zinc-500">
                             {s.section_type || "section"}
                             {s.optional ? " • optional" : " • required"}
@@ -297,9 +570,12 @@ export default function AdvisingSelectionPage() {
                         </div>
                         <input
                           type="checkbox"
-                          checked={selectedSections.includes(s.template_section_id)}
+                          checked={selectedSections.includes(
+                            s.template_section_id,
+                          )}
                           onChange={() => toggleSection(s.template_section_id)}
                           className="size-4 rounded border-zinc-400 text-amber-600 focus:ring-amber-400"
+                          disabled={!templateId}
                         />
                       </li>
                     ))}
@@ -308,7 +584,7 @@ export default function AdvisingSelectionPage() {
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Step 3: Draft / Finalize / Export */}
             <div className="mt-2 flex flex-wrap justify-end gap-3">
               <button
                 className="rounded-xl border px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -321,59 +597,93 @@ export default function AdvisingSelectionPage() {
               </button>
 
               <button
-                className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200"
-                onClick={async (e) => {
-                  e.preventDefault();
-                  try {
-                    const payload = {
-                      student_name: `${form.first} ${form.last}`.trim(),
-                      student_email: form.email,
-                      source_institution: form.inst,
-                      target_program: form.major,
-                    };
-                    const r = await api<{ id?: number; request_id?: number }>("/requests", "POST", payload);
-                    const newId = r.id ?? r.request_id;
-                    if (newId) setRequestId(Number(newId));
-                    alert("Request created.");
-                  } catch (err) {
-                    alert(errorMessage(err) || "Failed to create request");
-                  }
-                }}
+                className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={handleStartDraft}
+                disabled={!requestId || !templateId || !!packetId}
               >
-                Save Request
+                Start Drafting (Generate Draft Packet)
+              </button>
+            </div>
+
+            {/* Step 4: Extra info blocks */}
+            <div className="mt-4 rounded-2xl border p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold">
+                  Optional – Add Extra Info Blocks
+                </h2>
+                <span className="text-xs text-zinc-500">
+                  Reusable content (SourceContent) that can be inserted into the current packet draft.
+                </span>
+              </div>
+
+              {loadingInfoBlocks ? (
+                <p className="mt-2 text-sm text-zinc-700">
+                  Loading info blocks…
+                </p>
+              ) : errInfoBlocks ? (
+                <p className="mt-2 text-sm text-red-600">{errInfoBlocks}</p>
+              ) : infoBlocks.length === 0 ? (
+                <p className="mt-2 text-sm text-zinc-700">
+                  No reusable info blocks available yet.
+                </p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {infoBlocks.map((sc) => (
+                    <li
+                      key={sc.id}
+                      className="flex items-start justify-between gap-3 rounded-xl border p-3"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="truncate text-sm font-medium">
+                            {sc.title}
+                          </div>
+                          <span className="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-500">
+                            {sc.content_type}
+                          </span>
+                        </div>
+                        <p className="mt-1 line-clamp-3 text-xs text-zinc-600 dark:text-zinc-300">
+                          {sc.body_preview}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="shrink-0 rounded-xl border border-black bg-zinc-100 px-2 py-1 text-xs font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() => handleAddInfoBlock(sc)}
+                        disabled={!packetId || packetStatus === "finalized"}
+                        title={
+                          !packetId
+                            ? "Generate a packet draft first"
+                            : packetStatus === "finalized"
+                            ? "Packet is finalized and cannot be edited"
+                            : `Add to packet #${packetId}`
+                        }
+                      >
+                        Add to Packet
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+               <button
+                className="m-4 rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={handleFinalize}
+                disabled={!packetId}
+              >
+                Finalize Packet
               </button>
 
-              <button
-                className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200"
-                onClick={async (e) => {
-                  e.preventDefault();
-                  if (!requestId) {
-                    alert("Create or load a request first.");
-                    return;
-                  }
-                  try {
-                    const tplId = templateId;
-                    if (!tplId) {
-                      alert("Pick a template first.");
-                      return;
-                    }
-                    const out = await api<{ id?: number; packet_id?: number }>(
-                      "/packets/generate",
-                      "POST",
-                      { request_id: requestId, template_id: tplId, include_section_ids: selectedSections },
-                    );
-                    const pid = out.id ?? out.packet_id;
-                    if (pid) setPacketId(Number(pid));
-                    alert("Packet generated.");
-                  } catch (err) {
-                    alert(errorMessage(err) || "Failed to generate packet");
-                  }
-                }}
-              >
-                Generate Packet
-              </button>
-              {/* NEW: Packet ID input before export */}
-              <div className="flex items-center gap-2">
+              {!packetId ? (
+                <p className="mt-2 text-[11px] text-zinc-500">
+                  You must generate a draft packet before you can add extra info blocks.
+                </p>
+              ) : packetStatus === "finalized" ? (
+                <p className="mt-2 text-[11px] text-zinc-500">
+                  This packet has been finalized and can no longer be modified.
+                </p>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2">
                 <label className="text-xs text-zinc-600">
                   Packet ID:
                   <input
@@ -387,54 +697,11 @@ export default function AdvisingSelectionPage() {
                 </label>
                 <button
                   className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200"
-                  onClick={async (e) => {
-                    e.preventDefault();
-
-                    const parsed = Number(packetIdInput);
-                    if (!packetIdInput.trim() || Number.isNaN(parsed) || parsed <= 0) {
-                      alert("Enter a valid Packet ID before exporting.");
-                      return;
-                    }
-
-                    try {
-                      const out = await api<{ path: string }>("/packets/export", "POST", {
-                        packet_id: parsed,
-                        format: "docx",
-                      });
-
-                      if (!out.path) {
-                        alert("Export failed: no file path returned.");
-                        return;
-                      }
-
-                      // Normalize Windows-style backslashes -> URL-style forward slashes
-                      let clean = out.path.replace(/\\/g, "/"); // e.g. "exports/packet_1.docx" or "/exports/packet_1.docx"
-
-                      // Ensure exactly one leading slash before "exports/..."
-                      if (!clean.startsWith("/")) {
-                        clean = `/${clean}`; // "/exports/packet_1.docx"
-                      }
-
-                      // Build full URL served by Flask
-                      // Assumes backend route: GET /api/packets/exports/<filename>
-                      const fileUrl = `http://127.0.0.1:5000/api/packets${clean}`;
-                      // -> "http://127.0.0.1:5000/api/packets/exports/packet_1.docx"
-
-                      const link = document.createElement("a");
-                      link.href = fileUrl;
-                      link.download = clean.split("/").pop() || "packet.docx";
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    } catch (err) {
-                      alert((err as Error).message || "Failed to export packet");
-                    }
-                  }}
+                  onClick={handleExport}
                 >
-                  Export Packet (DOCX)
+                  Export (DOCX)
                 </button>
               </div>
-            </div>
           </form>
         </section>
       </Container>

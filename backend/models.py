@@ -56,6 +56,8 @@ class StudentRequest(Base):
     advisor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 
     advisor = relationship("User")
 
@@ -170,6 +172,7 @@ class Packet(Base):
 
     status = Column(String, default="draft")  # "draft" | "finalized"
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     request = relationship("StudentRequest")
     template = relationship("Template")
@@ -206,5 +209,8 @@ class PacketSection(Base):
     section_type = Column(String, nullable=False)
     content_type = Column(String, nullable=False, default="text")
     content = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 
     packet = relationship("Packet", back_populates="sections")

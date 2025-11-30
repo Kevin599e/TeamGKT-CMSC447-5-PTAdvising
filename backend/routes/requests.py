@@ -37,11 +37,32 @@ def list_requests():
     ok, err = require_auth()
     if not ok: return err
 
-    rows = db_session.query(StudentRequest).order_by(StudentRequest.created_at.desc()).all()
-    return {"items": [{
-        "id": r.id,
-        "student_name": r.student_name,
-        "student_email": r.student_email,
-        "source_institution": r.source_institution,
-        "target_program": r.target_program,
-    } for r in rows]}
+    rows = (
+        db_session.query(StudentRequest)
+        .order_by(StudentRequest.created_at.desc())
+        .all()
+    )
+
+    result = []
+    for r in rows:
+        # Determine latest packet status
+        if hasattr(r, "packets") and r.packets:
+            latest_packet = max(r.packets, key=lambda p: p.updated_at or p.created_at)
+            latest_packet_status = latest_packet.status
+            latest_packet_updated_at = latest_packet.updated_at.isoformat()
+        else:
+            latest_packet_status = None
+            latest_packet_updated_at = None
+
+        result.append({
+            "id": r.id,
+            "student_name": r.student_name,
+            "student_email": r.student_email,
+            "source_institution": r.source_institution,
+            "target_program": r.target_program,
+            "created_at": r.created_at.isoformat(),
+            "latest_packet_status": latest_packet_status,
+            "latest_packet_updated_at": latest_packet_updated_at,
+        })
+
+    return {"items": result}
