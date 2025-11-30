@@ -17,9 +17,9 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp ../.env.example .env  # then edit values
+cp ../.env.example .env  # then edit values (optional)
 $env:PYTHONPATH = "."
-python scripts/seed.py    # creates an admin user (admin@umbc.edu / Passw0rd! — change it)
+python scripts/seed.py # Seed data of users' credentials and initial data for the database. 
 flask --app app run --debug
 ```
 
@@ -32,7 +32,7 @@ On a new terminal, use a static server:
 cd frontend
 python -m http.server 5173
 ```
-Visit the site: https://127.0.0.1:5173
+Visit the site: http://127.0.0.1:5173
 ## Default Roles
 - **admin**: manage templates & sections
 - **advisor**: create student requests and packets
