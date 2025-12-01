@@ -23,6 +23,15 @@ interface Template {
   active?: boolean;
 }
 
+interface TemplateSectionItem {
+  id: number;
+  title: string;
+  section_type?: string;
+  display_order?: number;
+  optional?: boolean;
+  source_content_id?: number | null;
+}
+
 interface SourceContentItem {
   id: number;
   title: string;
@@ -56,11 +65,18 @@ export default function AdminPage() {
 
   // Programs
   const [programOutput, setProgramOutput] = useState<string>("");
+  const [programs, setPrograms] = useState<Program[]>([]);
 
   // Templates & sections
   const [templateCreateOutput, setTemplateCreateOutput] = useState<string>("");
   const [templateUpdateOutput, setTemplateUpdateOutput] = useState<string>("");
   const [sectionOutput, setSectionOutput] = useState<string>("");
+
+  // Template sections (for selected template)
+const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+const [templateSections, setTemplateSections] = useState<TemplateSectionItem[]>([]);
+const [sectionsLoading, setSectionsLoading] = useState(false);
+const [sectionsErr, setSectionsErr] = useState<string | null>(null);
 
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -90,49 +106,55 @@ export default function AdminPage() {
 
   // ---------- Handlers: Programs ---------- //
   async function handleProgramCreate(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const payload = {
-      name: String(fd.get("name") || ""),
-      active: fd.get("active") === "on",
-    };
-    try {
-      const resp = await api<{ id: number }>("/templates/programs", "POST", payload);
-      setProgramOutput("✅ Program created:\n" + JSON.stringify(resp, null, 2));
-      e.currentTarget.reset();
-    } catch (err) {
-      setProgramOutput("❌ " + errorMessage(err));
-    }
+  e.preventDefault();
+  const form = e.currentTarget;              // 🔹 capture before await
+  const fd = new FormData(form);
+
+  const payload = {
+    name: String(fd.get("name") || ""),
+    active: fd.get("active") === "on",
+  };
+
+  try {
+    const resp = await api<{ id: number }>("/templates/programs", "POST", payload);
+    setProgramOutput("✅ Program created:\n" + JSON.stringify(resp, null, 2));
+    form.reset();                            // ✅ safe now
+  } catch (err) {
+    setProgramOutput("❌ " + errorMessage(err));
   }
+}
 
   async function handleProgramUpdate(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const idRaw = fd.get("program_id");
-    const payload: Record<string, unknown> = {};
+  e.preventDefault();
+  const form = e.currentTarget;              // 🔹 capture before await
+  const fd = new FormData(form);
 
-    const name = fd.get("name");
-    const active = fd.get("active");
+  const idRaw = fd.get("program_id");
+  const payload: Record<string, unknown> = {};
 
-    if (name && String(name).trim() !== "") {
-      payload.name = String(name);
-    }
-    if (active === "true") payload.active = true;
-    if (active === "false") payload.active = false;
+  const name = fd.get("name");
+  const active = fd.get("active");
 
-    try {
-      const resp = await api(`/templates/programs/${idRaw}`, "PATCH", payload);
-      setProgramOutput("✅ Program updated:\n" + JSON.stringify(resp, null, 2));
-      e.currentTarget.reset();
-    } catch (err) {
-      setProgramOutput("❌ " + errorMessage(err));
-    }
+  if (name && String(name).trim() !== "") {
+    payload.name = String(name);
   }
+  if (active === "true") payload.active = true;
+  if (active === "false") payload.active = false;
+
+  try {
+    const resp = await api(`/templates/programs/${idRaw}`, "PATCH", payload);
+    setProgramOutput("✅ Program updated:\n" + JSON.stringify(resp, null, 2));
+    form.reset();                            // ✅ safe now
+  } catch (err) {
+    setProgramOutput("❌ " + errorMessage(err));
+  }
+}
 
   async function handleProgramList() {
     try {
       type ProgramListResponse = { items?: Program[] } | Program[];
       const resp = await api<ProgramListResponse>("/templates/programs", "GET");
+
       let items: Program[] = [];
       if (Array.isArray(resp)) {
         items = resp;
@@ -142,35 +164,46 @@ export default function AdminPage() {
           items = obj.items;
         }
       }
-      setProgramOutput(JSON.stringify(items ?? [], null, 2));
+
+      // 🆕 Sort by ID ASC
+      const sorted = (items ?? []).sort((a, b) => a.id - b.id);
+
+      setPrograms(sorted);
+      setProgramOutput(JSON.stringify(sorted, null, 2));
     } catch (err) {
       setProgramOutput("❌ " + errorMessage(err));
     }
   }
 
+  
+
   // ---------- Handlers: Templates ---------- //
   async function handleTemplateCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;            // ✅ capture form
+    const fd = new FormData(form);
+
     const payload = {
       name: String(fd.get("name") || ""),
       program_id: parseInt(String(fd.get("program_id") || "0"), 10),
       active: fd.get("active") === "on",
     };
+
     try {
       const resp = await api("/templates", "POST", payload);
       setTemplateCreateOutput("✅ Template created:\n" + JSON.stringify(resp, null, 2));
-      e.currentTarget.reset();
-      // refresh list so the new template appears
-      void handleTemplateList();
+      form.reset();                          // ✅ safe now
+      void handleTemplateList();             // refresh list
     } catch (err) {
       setTemplateCreateOutput("❌ " + errorMessage(err));
     }
   }
 
+
   async function handleTemplateUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;            // ✅ capture form
+    const fd = new FormData(form);
 
     const templateId = fd.get("template_id");
     const payload: Record<string, unknown> = {};
@@ -191,12 +224,13 @@ export default function AdminPage() {
     try {
       const resp = await api(`/templates/${templateId}`, "PATCH", payload);
       setTemplateUpdateOutput("✅ Template updated:\n" + JSON.stringify(resp, null, 2));
-      e.currentTarget.reset();
+      form.reset();                          // ✅ safe
       void handleTemplateList();
     } catch (err) {
       setTemplateUpdateOutput("❌ " + errorMessage(err));
     }
   }
+
 
   async function handleTemplateList() {
     try {
@@ -221,10 +255,53 @@ export default function AdminPage() {
     }
   }
 
+  async function handleTemplateSectionsLoad(template: Template) {
+  setSelectedTemplate(template);
+  setSectionsLoading(true);
+  setSectionsErr(null);
+
+  try {
+    type TemplateSectionListResponse =
+      | { items?: TemplateSectionItem[] }
+      | TemplateSectionItem[];
+
+    const resp = await api<TemplateSectionListResponse>(
+      `/templates/${template.id}/sections`,
+      "GET",
+    );
+
+    let items: TemplateSectionItem[] = [];
+    if (Array.isArray(resp)) {
+      items = resp;
+    } else if (resp && typeof resp === "object") {
+      const obj = resp as { items?: TemplateSectionItem[] };
+      if (Array.isArray(obj.items)) {
+        items = obj.items;
+      }
+    }
+
+    // sort by display_order then id
+    const sorted = (items ?? []).slice().sort((a, b) => {
+      const da = a.display_order ?? 9999;
+      const db = b.display_order ?? 9999;
+      if (da !== db) return da - db;
+      return a.id - b.id;
+    });
+
+    setTemplateSections(sorted);
+  } catch (err) {
+    setSectionsErr(errorMessage(err));
+    setTemplateSections([]);
+  } finally {
+    setSectionsLoading(false);
+  }
+}
+
   // ---------- Handlers: Template Sections ---------- //
   async function handleSectionCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;            // ✅ capture form
+    const fd = new FormData(form);
 
     const templateId = fd.get("template_id");
     const payload: Record<string, unknown> = {
@@ -246,7 +323,7 @@ export default function AdminPage() {
     try {
       const resp = await api(`/templates/${templateId}/sections`, "POST", payload);
       setSectionOutput("✅ Section created:\n" + JSON.stringify(resp, null, 2));
-      e.currentTarget.reset();
+      form.reset();                          // ✅ safe
     } catch (err) {
       setSectionOutput("❌ " + errorMessage(err));
     }
@@ -255,7 +332,8 @@ export default function AdminPage() {
   // ---------- Handlers: Source Content ---------- //
   async function handleSourceContentCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;            // ✅ capture form
+    const fd = new FormData(form);
 
     const payload = {
       title: String(fd.get("title") || ""),
@@ -267,12 +345,13 @@ export default function AdminPage() {
     try {
       const resp = await api("/templates/source-content", "POST", payload);
       setSourceContentOutput("✅ Source content created:\n" + JSON.stringify(resp, null, 2));
-      e.currentTarget.reset();
-      void handleSourceContentList();
+      form.reset();                          // ✅ safe
+      void handleSourceContentList();        // refresh dropdown + table
     } catch (err) {
       setSourceContentOutput("❌ " + errorMessage(err));
     }
   }
+
 
   async function handleSourceContentList() {
     try {
@@ -280,6 +359,7 @@ export default function AdminPage() {
       setSourceErr(null);
       type SourceContentListResponse = { items?: SourceContentItem[] } | SourceContentItem[];
       const resp = await api<SourceContentListResponse>("/templates/source-content", "GET");
+
       let items: SourceContentItem[] = [];
       if (Array.isArray(resp)) {
         items = resp;
@@ -289,8 +369,10 @@ export default function AdminPage() {
           items = obj.items;
         }
       }
-      setSourceItems(items ?? []);
-      setSourceContentOutput(JSON.stringify(items ?? [], null, 2));
+
+      const sorted = (items ?? []).sort((a, b) => a.id - b.id); // 🔹 sort by ID asc
+      setSourceItems(sorted);
+      setSourceContentOutput(JSON.stringify(sorted ?? [], null, 2));
     } catch (err) {
       setSourceErr(errorMessage(err));
       setSourceContentOutput("❌ " + errorMessage(err));
@@ -298,6 +380,12 @@ export default function AdminPage() {
       setSourceLoading(false);
     }
   }
+  useEffect(() => {
+      if (isAdmin) {
+        void handleProgramList(); // preload programs so selects have data
+        void handleSourceContentList();
+      }
+    }, [isAdmin]);
 
   // ---------- Render ---------- //
   if (loadingMe) {
@@ -343,7 +431,7 @@ export default function AdminPage() {
             </p>
           </div>
           <div className="text-xs text-black-500 dark:text-black-400">
-            Signed in as {me?.email ?? "(unknown)"} — role:
+            Signed in as {me?.email ?? "user@email.com"} — role:
             <span className="ml-1 rounded bg-yellow-300 px-1.5 py-0.5 font-mono text-[11px] dark:bg-yellow-300">
               {me?.role ?? "admin"}
             </span>
@@ -361,13 +449,14 @@ export default function AdminPage() {
                 : "rounded-lg px-3 py-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             }
           >
-            Programs 
+            Programs
           </button>
           <button
             type="button"
             onClick={() => {
               setActiveTab("templates");
               void handleTemplateList();
+              void handleSourceContentList();
             }}
             className={
               activeTab === "templates"
@@ -432,12 +521,21 @@ export default function AdminPage() {
 
                 <form onSubmit={handleProgramUpdate} className="grid gap-2">
                   <h3 className="text-sm font-medium">Update Program</h3>
-                  <input
-                    name="program_id"
-                    placeholder="Program ID"
-                    required
-                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                  />
+                  <label className="grid gap-1 text-xs text-zinc-700 dark:text-zinc-300">
+                    <span>Program</span>
+                    <select
+                      name="program_id"
+                      required
+                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+                    >
+                      <option value="">Select a program…</option>
+                      {programs.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.id} — {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <input
                     name="name"
                     placeholder="New Name (optional)"
@@ -504,12 +602,21 @@ export default function AdminPage() {
                         required
                         className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                       />
-                      <input
-                        name="program_id"
-                        placeholder="Program ID (e.g., 1)"
-                        required
-                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                      />
+                      <label className="grid gap-1 text-xs text-zinc-700 dark:text-zinc-300">
+                        <span>Program</span>
+                        <select
+                          name="program_id"
+                          required
+                          className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+                        >
+                          <option value="">Select a program…</option>
+                          {programs.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.id} — {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                       <label className="mt-1 flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
                         <input
                           type="checkbox"
@@ -546,11 +653,21 @@ export default function AdminPage() {
                         placeholder="New name (optional)"
                         className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                       />
-                      <input
-                        name="program_id"
-                        placeholder="New program ID (optional)"
-                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                      />
+                      <label className="grid gap-1 text-xs text-zinc-700 dark:text-zinc-300">
+                        <span>Program</span>
+                        <select
+                          name="program_id"
+                          required
+                          className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+                        >
+                          <option value="">Select a program…</option>
+                          {programs.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.id} — {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                       <label className="mt-1 flex items-center justify-between gap-2 text-xs text-zinc-700 dark:text-zinc-300">
                         <span>Active</span>
                         <select
@@ -600,11 +717,20 @@ export default function AdminPage() {
                         placeholder="Display order (number)"
                         className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                       />
-                      <input
-                        name="source_content_id"
-                        placeholder="Source content ID (optional)"
-                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                      />
+                      <label className="grid gap-1 text-xs text-zinc-700 dark:text-zinc-300">
+                        <span>Source content (optional)</span>
+                        <select
+                          name="source_content_id"
+                          className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                        >
+                          <option value="">None</option>
+                          {sourceItems.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.id} — {item.title}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                       <label className="mt-1 flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
                         <input
                           type="checkbox"
@@ -660,7 +786,7 @@ export default function AdminPage() {
                       </div>
                     ) : (
                       <table className="w-full text-left text-xs">
-                        <thead className="sticky top-0 border-b bg-zinc-100 text-[11px] uppercase tracking-wide text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+                        <thead className="sticky top-0 border-b bg-zinc-100 text-[11px] uppercase tracking-wide !text-white dark:!text-white dark:bg-zinc-900">
                           <tr>
                             <th className="px-3 py-2">ID</th>
                             <th className="px-3 py-2">Name</th>
@@ -678,29 +804,96 @@ export default function AdminPage() {
                                 No templates found.
                               </td>
                             </tr>
-                          ) : (
-                            templates.map((t) => (
-                              <tr
-                                key={t.id}
-                                className="border-b last:border-0 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                              >
-                                <td className="px-3 py-1.5 font-mono text-[11px]">
-                                  {t.id}
-                                </td>
-                                <td className="px-3 py-1.5">{t.name}</td>
-                                <td className="px-3 py-1.5">
-                                  {t.program_id ?? "—"}
-                                </td>
-                                <td className="px-3 py-1.5">
-                                  {t.active ? "Active" : "Inactive"}
-                                </td>
-                              </tr>
-                            ))
-                          )}
+                          ) : (templates.map((t) => {
+                                const isSelected = selectedTemplate?.id === t.id;
+                                return (
+                                  <tr
+                                    key={t.id}
+                                    onClick={() => void handleTemplateSectionsLoad(t)}
+                                    className={
+                                      "cursor-pointer border-b last:border-0 hover:bg-zinc-100 dark:hover:bg-zinc-800" +
+                                      (isSelected ? " bg-yellow-50 dark:bg-zinc-800" : "")
+                                    }
+                                  >
+                                    <td className="px-3 py-1.5 font-mono text-[11px] !text-white">
+                                      {t.id}
+                                    </td>
+                                    <td className="px-3 py-1.5 !text-white">{t.name}</td>
+                                    <td className="px-3 py-1.5 !text-white">{t.program_id ?? "—"}</td>
+                                    <td className="px-3 py-1.5 !text-white">
+                                      {t.active ? "Active" : "Inactive"}
+                                    </td>
+                                  </tr>
+                                );
+                              }))
+                            }
                         </tbody>
                       </table>
                     )}
                   </div>
+                  {selectedTemplate && (
+                    <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs dark:border-zinc-700 dark:bg-zinc-950">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <h4 className="text-sm !text-white font-semibold">
+                            Sections for template #{selectedTemplate.id} — {selectedTemplate.name}
+                          </h4>
+                          <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                            Click a template row above to view its sections, ordered by display order.
+                          </p>
+                        </div>
+                      </div>
+
+                      {sectionsErr && (
+                        <p className="mt-2 text-[11px] text-red-600">{sectionsErr}</p>
+                      )}
+
+                      {sectionsLoading ? (
+                        <p className="mt-2 text-[11px] text-zinc-500">
+                          Loading sections…
+                        </p>
+                      ) : templateSections.length === 0 ? (
+                        <p className="mt-2 text-[11px] text-zinc-500">
+                          This template has no sections yet.
+                        </p>
+                      ) : (
+                        <div className="mt-2 max-h-56 overflow-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                          <table className="w-full text-left text-[11px]">
+                            <thead className="sticky top-0 border-b bg-zinc-100 uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                              <tr>
+                                <th className="px-2 py-1">Order</th>
+                                <th className="px-2 py-1">Title</th>
+                                <th className="px-2 py-1">Type</th>
+                                <th className="px-2 py-1">Optional</th>
+                                <th className="px-2 py-1">Source ID</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {templateSections.map((s) => (
+                                <tr key={s.id} className="border-b last:border-0">
+                                  <td className="px-2 py-1 font-mono !text-white">
+                                    {s.display_order ?? "—"}
+                                  </td>
+                                  <td className="px-2 py-1 !text-white">
+                                    {s.title}
+                                  </td>
+                                  <td className="px-2 py-1">
+                                    {s.section_type ?? "text_block !text-white"}
+                                  </td>
+                                  <td className="px-2 py-1 !text-white">
+                                    {s.optional ? "Yes" : "No"}
+                                  </td>
+                                  <td className="px-2 py-1 !text-white">
+                                    {s.source_content_id ?? "—"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

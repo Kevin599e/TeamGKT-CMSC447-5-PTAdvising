@@ -158,7 +158,7 @@ export default function HomePage() {
         {/* Open new advising case */}
         <div className="mt-8 flex items-center justify-end">
           <button
-            onClick={() => navigate("/advising")}
+            onClick={() => navigate("/records")}
             className="rounded-2xl border border-black bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-black shadow hover:bg-zinc-200"
           >
             Open New Advising Case

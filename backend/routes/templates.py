@@ -66,6 +66,7 @@ def list_templates():
                 "id": t.id,
                 "name": t.name,
                 "program_name": t.program.name if t.program else None,
+                "program_id": t.program_id,
                 "active": t.active,
                 "sections": [
                     {
@@ -121,6 +122,32 @@ def template_builder_view(template_id):
         "program_name": t.program.name if t.program else None,
         "sections": result_sections,
     }
+
+@templates_bp.get("/<int:template_id>/sections")
+def list_template_sections(template_id):
+    """
+    List all sections for a given template.
+    Response shape matches what the React code expects.
+    """
+    sections = (
+        db_session.query(TemplateSection)
+        .filter_by(template_id=template_id)
+        .order_by(TemplateSection.display_order, TemplateSection.id)
+        .all()
+    )
+
+    items = []
+    for s in sections:
+        items.append({
+            "id": s.id,
+            "title": s.title,
+            "section_type": s.section_type,
+            "display_order": s.display_order,
+            "optional": s.optional,
+            "source_content_id": s.source_content_id,
+        })
+
+    return {"items": items}
 ## ----------------- TEMPLATE ADMIN ROUTES -----------------
 
 @templates_bp.post("")

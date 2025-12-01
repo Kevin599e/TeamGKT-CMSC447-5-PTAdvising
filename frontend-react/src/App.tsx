@@ -93,8 +93,8 @@ function AppNav() {
           <div />
           <Link to="/" className="justify-self-center" aria-label="UMBC Home">
             <div className="inline-flex items-center gap-2">
-              <span className="inline-flex size-9 items-center justify-center rounded-lg bg-black font-black text-amber-400">
-                U
+              <span className="inline-flex items-center justify-center rounded-lg bg-black px-3 py-1 font-black text-amber-400">
+                UMBC
               </span>
               <span className="sr-only">UMBC</span>
             </div>
@@ -168,16 +168,16 @@ function AppFooter() {
   return (
     <footer className="border-t py-8 text-sm text-zinc-700 dark:text-zinc-300">
       <Container>
-        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row !text-black">
           <p>© {new Date().getFullYear()} UMBC Pre-Transfer Advising (UI demo)</p>
           <div className="flex items-center gap-4">
-            <a className="hover:underline" href="#">
+            <a className="hover:underline !text-black" href="#">
               Privacy
             </a>
-            <a className="hover:underline" href="#">
+            <a className="hover:underline !text-black" href="#">
               Accessibility
             </a>
-            <a className="hover:underline" href="#">
+            <a className="hover:underline !text-black" href="#">
               Contact
             </a>
           </div>

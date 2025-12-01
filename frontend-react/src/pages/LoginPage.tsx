@@ -31,11 +31,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="py-10">
+    <main className="py-10 ">
       <Container>
-        <section className="mx-auto max-w-md rounded-2xl border p-6">
-          <h1 className="text-xl font-semibold tracking-tight">Sign in</h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+        <section className="mx-auto max-w-md rounded-2xl border p-6 !bg-yellow-300">
+          <h1 className="text-xl font-semibold tracking-tight">Sign in to Advising Packet Generator</h1>
+          <p className="mt-2 text-sm text-black italic">
             Admin or Advisor credentials
           </p>
           <form onSubmit={onSubmit} className="mt-6 grid gap-4">

@@ -144,12 +144,11 @@ export default function AdvisingCasePage() {
   return (
     <main className="py-10">
       <Container>
-        <section className="rounded-2xl border p-6">
+        <section className="rounded-2xl border bg-white p-6 dark:bg-zinc-900">
           <h1 className="text-xl font-semibold tracking-tight">Advising Cases</h1>
-          <p className="mt-2 text-sm text-black-400 dark:text-zinc-300">
+          <p className="mt-2 text-sm !text-zinc-800">
             Create a new advising case (student request) and view all existing ones.
           </p>
-
           {/* Create new case / request */}
           <form
             className="mt-6 grid gap-4 rounded-2xl border bg-zinc-50 p-4 dark:bg-zinc-950"
@@ -160,7 +159,7 @@ export default function AdvisingCasePage() {
             {/* Student name + email */}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <label className="text-sm text-yellow-400 font-medium" htmlFor="student_name">
+                <label className="text-sm  text-black dark:text-white font-medium" htmlFor="student_name">
                   Student Name
                 </label>
                 <input
@@ -172,7 +171,7 @@ export default function AdvisingCasePage() {
                 />
               </div>
               <div className="grid gap-1.5">
-                <label className="text-sm text-yellow-400 font-medium" htmlFor="student_email">
+                <label className="text-sm  text-black dark:text-white font-medium" htmlFor="student_email">
                   Student Email
                 </label>
                 <input
@@ -189,7 +188,7 @@ export default function AdvisingCasePage() {
             {/* Institution + target program */}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <label className="text-sm text-yellow-400 font-medium" htmlFor="source_institution">
+                <label className="text-sm text-black dark:text-white font-medium" htmlFor="source_institution">
                   Source Institution
                 </label>
                 <input
@@ -201,7 +200,7 @@ export default function AdvisingCasePage() {
                 />
               </div>
               <div className="grid gap-1.5">
-                <label className="text-sm text-yellow-400 font-medium" htmlFor="target_program">
+                <label className="text-sm  text-black dark:text-white font-medium" htmlFor="target_program">
                   Intended UMBC Program
                 </label>
                 <input
@@ -217,7 +216,7 @@ export default function AdvisingCasePage() {
             <div className="mt-2 flex justify-end gap-3">
               <button
                 type="submit"
-                className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl border border-black bg-yellow-400 px-3 py-2 text-sm font-semibold text-black hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={submitting}
               >
                 {submitting ? "Creating…" : "Create Advising Case"}
@@ -241,7 +240,7 @@ export default function AdvisingCasePage() {
             )}
 
             {!loadingReq && !errReq && requests.length === 0 && (
-              <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+              <p className="mt-2 text-sm !text-zinc-800">
                 No advising cases yet. Create one using the form above.
               </p>
             )}

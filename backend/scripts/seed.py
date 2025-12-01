@@ -37,6 +37,7 @@ def main():
     cs_prog = db_session.query(SourceProgram).filter_by(name="Computer Science BS").first()
     if not cs_prog:
         cs_prog = SourceProgram(
+            id = 1,
             name="Computer Science BS",
             active=True,
             created_at=datetime.utcnow(),
@@ -51,11 +52,8 @@ def main():
         title="CS Intro Script",
         content_type="text",
         body=(
-            "Welcome to UMBC Computer Science.\n\n"
-            "Student: {{student_name}} ({{student_email}})\n"
-            "Transferring from: {{source_institution}}\n"
-            "Intended Program: {{target_program}}\n\n"
-            "This packet outlines your suggested plan, degree audit, and next steps."
+            "Welcome to UMBC Computer Science.\n"
+            "This packet outlines your suggested plan, degree audit, UMBC information requested and next steps."
         ),
         active=True,
     )
@@ -398,14 +396,13 @@ def main():
         conclusion_block,
     ])
     db_session.flush()
-
-    # --- Template for CS program ---
+        # --- Template for CS program ---
     # One template with fixed ordered sections.
     cs_template = db_session.query(Template).filter_by(program_id=cs_prog.id).first()
     if not cs_template:
         cs_template = Template(
             program_id=cs_prog.id,
-            name="CS Transfer Packet Template v1",
+            name="Template Computer Science BS",
             active=True,
         )
         db_session.add(cs_template)
