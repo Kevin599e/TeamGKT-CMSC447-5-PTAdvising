@@ -337,21 +337,21 @@ export default function AdminPage() {
             <h1 className="text-2xl font-semibold tracking-tight">
               Admin: Template &amp; Content Management
             </h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+            <p className="mt-1 text-sm text-black-500 dark:text-black-400">
               Manage programs, templates, sections, and source content used by advisors
               when generating packets.
             </p>
           </div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          <div className="text-xs text-black-500 dark:text-black-400">
             Signed in as {me?.email ?? "(unknown)"} — role:
-            <span className="ml-1 rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] dark:bg-zinc-800">
+            <span className="ml-1 rounded bg-yellow-300 px-1.5 py-0.5 font-mono text-[11px] dark:bg-yellow-300">
               {me?.role ?? "admin"}
             </span>
           </div>
         </section>
 
         {/* Tabs */}
-        <div className="mb-6 inline-flex flex-wrap gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-1 text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900/60">
+        <div className="mb-6 inline-flex flex-wrap gap-2 rounded-xl border border-zinc-200 bg-yellow-300 p-1 text-xs font-medium dark:bg-yellow-300">
           <button
             type="button"
             onClick={() => setActiveTab("programs")}
@@ -361,7 +361,7 @@ export default function AdminPage() {
                 : "rounded-lg px-3 py-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             }
           >
-            Programs
+            Programs 
           </button>
           <button
             type="button"
@@ -398,7 +398,7 @@ export default function AdminPage() {
           {/* Programs */}
           {activeTab === "programs" && (
             <section className={cardClass}>
-              <h2 className="text-lg font-semibold">Programs</h2>
+              <h2 className="text-lg font-semibold">Programs Management</h2>
               <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
                 Create, update, and list programs (e.g., CS BS, IS BS) that templates are
                 attached to.
@@ -424,7 +424,7 @@ export default function AdminPage() {
                   </label>
                   <button
                     type="submit"
-                    className="mt-1 inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
+                    className="mt-1 inline-flex items-center justify-center rounded-xl border border-yellow-300 bg-yellow-200 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-300 dark:border-yellow-400 dark:bg-yellow-300 dark:hover:bg-yellow-400"
                   >
                     Create Program
                   </button>
@@ -456,7 +456,7 @@ export default function AdminPage() {
                   </label>
                   <button
                     type="submit"
-                    className="mt-1 inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
+                    className="mt-1 inline-flex items-center justify-center rounded-xl border border-yellow-300 bg-yellow-200 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-300 dark:border-yellow-400 dark:bg-yellow-300 dark:hover:bg-yellow-400"
                   >
                     Update Program
                   </button>
@@ -489,122 +489,141 @@ export default function AdminPage() {
               </p>
 
               <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,2.1fr),minmax(0,2.9fr)]">
-                {/* Forms */}
+                {/* Left: Forms */}
                 <div className="grid gap-4">
-                  <form onSubmit={handleTemplateCreate} className="grid gap-2">
-                    <h3 className="text-sm font-medium">Create Template</h3>
-                    <input
-                      name="name"
-                      placeholder="Template name (e.g., CS BS Default)"
-                      required
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <input
-                      name="program_id"
-                      placeholder="Program ID (e.g., 1)"
-                      required
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <label className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                  {/* Create Template */}
+                  <div className="rounded-xl border border-zinc-200 bg-white p-4 text-xs dark:border-zinc-700 dark:bg-zinc-950">
+                    <h3 className="text-sm text-yellow-400 font-medium">Create Template</h3>
+                    <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
+                      Create a new advising packet template and link it to a program.
+                    </p>
+                    <form onSubmit={handleTemplateCreate} className="mt-3 grid gap-2">
                       <input
-                        type="checkbox"
-                        name="active"
-                        defaultChecked
-                        className="h-4 w-4 rounded border-zinc-400 text-amber-600 focus:ring-amber-400"
+                        name="name"
+                        placeholder="Template name (e.g., CS BS Default)"
+                        required
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                       />
-                      Active
-                    </label>
-                    <button
-                      type="submit"
-                      className="mt-1 inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
-                    >
-                      Create Template
-                    </button>
-                  </form>
-
-                  <form onSubmit={handleTemplateUpdate} className="grid gap-2">
-                    <h3 className="text-sm font-medium">Update Template</h3>
-                    <input
-                      name="template_id"
-                      placeholder="Template ID"
-                      required
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <input
-                      name="name"
-                      placeholder="New name (optional)"
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <input
-                      name="program_id"
-                      placeholder="New program ID (optional)"
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <label className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
-                      Active:
-                      <select
-                        name="active"
-                        className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+                      <input
+                        name="program_id"
+                        placeholder="Program ID (e.g., 1)"
+                        required
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                      <label className="mt-1 flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                        <input
+                          type="checkbox"
+                          name="active"
+                          defaultChecked
+                          className="h-4 w-4 rounded border-zinc-400 text-amber-600 focus:ring-amber-400"
+                        />
+                        Active
+                      </label>
+                      <button
+                        type="submit"
+                        className="mt-2 inline-flex items-center justify-center rounded-xl border border-yellow-500 bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-500 dark:border-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600"
                       >
-                        <option value="">(no change)</option>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
-                      </select>
-                    </label>
-                    <button
-                      type="submit"
-                      className="mt-1 inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
-                    >
-                      Update Template
-                    </button>
-                  </form>
+                        Create Template
+                      </button>
+                    </form>
+                  </div>
 
-                  <form onSubmit={handleSectionCreate} className="grid gap-2">
-                    <h3 className="text-sm font-medium">Add Section to Template</h3>
-                    <input
-                      name="template_id"
-                      placeholder="Template ID"
-                      required
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <input
-                      name="title"
-                      placeholder="Section title"
-                      required
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <input
-                      name="section_type"
-                      placeholder="Section type (e.g., text_block)"
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <input
-                      name="display_order"
-                      placeholder="Display order (number)"
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <input
-                      name="source_content_id"
-                      placeholder="Source content ID (optional)"
-                      className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    />
-                    <label className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                  {/* Update Template */}
+                  <div className="rounded-xl border border-zinc-200 bg-white p-4 text-xs dark:border-zinc-700 dark:bg-zinc-950">
+                    <h3 className="text-sm text-yellow-400 font-medium">Update Template</h3>
+                    <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
+                      Rename a template, change its program, or toggle its active state.
+                    </p>
+                    <form onSubmit={handleTemplateUpdate} className="mt-3 grid gap-2">
                       <input
-                        type="checkbox"
-                        name="optional"
-                        className="h-4 w-4 rounded border-zinc-400 text-amber-600 focus:ring-amber-400"
+                        name="template_id"
+                        placeholder="Template ID"
+                        required
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                       />
-                      Optional section
-                    </label>
-                    <button
-                      type="submit"
-                      className="mt-1 inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
-                    >
-                      Add Section
-                    </button>
-                  </form>
+                      <input
+                        name="name"
+                        placeholder="New name (optional)"
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                      <input
+                        name="program_id"
+                        placeholder="New program ID (optional)"
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                      <label className="mt-1 flex items-center justify-between gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                        <span>Active</span>
+                        <select
+                          name="active"
+                          className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                        >
+                          <option value="">(no change)</option>
+                          <option value="true">Active</option>
+                          <option value="false">Inactive</option>
+                        </select>
+                      </label>
+                      <button
+                        type="submit"
+                        className="mt-2 inline-flex items-center justify-center rounded-xl border border-yellow-500 bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-500 dark:border-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600"
+                      >
+                        Update Template
+                      </button>
+                    </form>
+                  </div>
 
-                  <pre className="mt-2 max-h-40 overflow-auto rounded-xl bg-zinc-950/90 p-3 text-[11px] text-zinc-50 dark:bg-black">
+                  {/* Add Section */}
+                  <div className="rounded-xl border border-zinc-200 bg-white p-4 text-xs dark:border-zinc-700 dark:bg-zinc-950">
+                    <h3 className="text-sm text-yellow-400 font-medium">Add Section to Template</h3>
+                    <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
+                      Attach information blocks, degree audit sections, or custom text to a template.
+                    </p>
+                    <form onSubmit={handleSectionCreate} className="mt-3 grid gap-2">
+                      <input
+                        name="template_id"
+                        placeholder="Template ID"
+                        required
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                      <input
+                        name="title"
+                        placeholder="Section title"
+                        required
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                      <input
+                        name="section_type"
+                        placeholder="Section type (e.g., text_block)"
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                      <input
+                        name="display_order"
+                        placeholder="Display order (number)"
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                      <input
+                        name="source_content_id"
+                        placeholder="Source content ID (optional)"
+                        className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-amber-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                      />
+                      <label className="mt-1 flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                        <input
+                          type="checkbox"
+                          name="optional"
+                          className="h-4 w-4 rounded border-zinc-400 text-amber-600 focus:ring-amber-400"
+                        />
+                        Optional section
+                      </label>
+                      <button
+                        type="submit"
+                        className="mt-2 inline-flex items-center justify-center rounded-xl border border-yellow-500 bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-500 dark:border-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600"
+                      >
+                        Add Section
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Output / debug */}
+                  <pre className="mt-1 max-h-40 overflow-auto rounded-xl bg-zinc-950/90 p-3 text-[11px] text-zinc-50 dark:bg-black">
                     {templateCreateOutput ||
                       templateUpdateOutput ||
                       sectionOutput ||
@@ -612,21 +631,28 @@ export default function AdminPage() {
                   </pre>
                 </div>
 
-                {/* Template list */}
+                {/* Right: Template list */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-medium mb-1">Existing Templates</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-medium mb-0.5">Existing Templates</h3>
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-mono text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                        {templates.length} total
+                      </span>
+                    </div>
                     <button
                       type="button"
                       onClick={handleTemplateList}
-                      className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
+                      className="inline-flex items-center justify-center rounded-xl border border-yellow-500 bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-500 dark:border-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600"
                     >
                       Refresh
                     </button>
                   </div>
+
                   {templatesErr && (
                     <p className="text-xs text-red-600">{templatesErr}</p>
                   )}
+
                   <div className="max-h-80 overflow-auto rounded-xl border border-zinc-200 bg-zinc-50 text-sm dark:border-zinc-700 dark:bg-zinc-950">
                     {templatesLoading ? (
                       <div className="px-3 py-3 text-xs text-zinc-500">
@@ -679,6 +705,7 @@ export default function AdminPage() {
               </div>
             </section>
           )}
+
 
           {/* Source content */}
           {activeTab === "content" && (
@@ -795,7 +822,7 @@ export default function AdminPage() {
                                 {item.id}
                               </td>
                               <td className="px-3 py-1.5">
-                                <div className="font-medium">{item.title}</div>
+                                <div className="font-medium text-yellow-400">{item.title}</div>
                                 {item.body_preview && (
                                   <div className="mt-0.5 line-clamp-2 text-[11px] text-zinc-500 dark:text-zinc-400">
                                     {item.body_preview}

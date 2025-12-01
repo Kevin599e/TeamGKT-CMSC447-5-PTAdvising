@@ -174,7 +174,7 @@ export default function AdvisingSelectionPage() {
       setLoadingInfoBlocks(true);
       setErrInfoBlocks(null);
       try {
-        const res = await api<{ items: any[] }>("/templates/source-content");
+        const res = await api<{ items: any[] }>("/templates/source-content?usage_tag=extra_info_block");
         const items = res.items || [];
         const mapped: SourceContentItem[] = items.map((sc: any) => ({
           id: Number(sc.id),
@@ -367,10 +367,12 @@ export default function AdvisingSelectionPage() {
             )}
           </div>
 
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-            1) Choose an existing student request. 2) Select a template and
-            preview sections. 3) Generate a draft packet, optionally add extra
-            info blocks, finalize, and export.
+          <p className="mt-2 text-sm text-zinc-600 text-black">
+            Instruction for to make an advising packet: <br />
+            1) Choose an existing student request.<br />
+            2) Select a template and preview sections. <br />
+            3) Generate a draft packet, optionally add extra
+            info blocks, finalize, and export. <br />
           </p>
 
           <form className="mt-6 grid gap-6">
@@ -412,7 +414,7 @@ export default function AdvisingSelectionPage() {
                 )}
               </div>
 
-              <div className="rounded-xl border bg-zinc-50 p-3 text-xs dark:bg-zinc-900 dark:border-zinc-700">
+              <div className="rounded-xl border bg-yellow-300 text-black p-3 text-xs dark:bg-yellow-300 dark:text-black dark:border-zinc-700">
                 {currentRequest ? (
                   <div className="space-y-1">
                     <div>
@@ -453,9 +455,11 @@ export default function AdvisingSelectionPage() {
                 </div>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2">
                 <div className="grid gap-2">
-                  <label className="text-xs text-zinc-500">Template</label>
+                  <label className="text-xs text-black/60">
+                    Template
+                  </label>
                   <select
                     value={templateId ?? ""}
                     onChange={(e) =>
@@ -463,7 +467,7 @@ export default function AdvisingSelectionPage() {
                         e.target.value ? Number(e.target.value) : null,
                       )
                     }
-                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+                    className="rounded-xl border border-black/30 bg-white px-3 py-2 text-sm text-black focus:ring-2 focus:ring-yellow-400"
                     disabled={!requestId}
                   >
                     <option value="" disabled>
@@ -482,64 +486,68 @@ export default function AdvisingSelectionPage() {
                       </option>
                     ))}
                   </select>
+
                   {currentTemplate && (
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-black/60">
                       Program:{" "}
                       <span className="font-medium">
                         {currentTemplate.program_name || "—"}
                       </span>
                     </p>
                   )}
-                </div>
 
-                <div className="grid gap-2">
-                  <label className="text-xs text-zinc-500">
-                    Quick section presets
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="rounded border border-black bg-zinc-100 px-2 py-1 text-xs"
-                      onClick={() =>
-                        setSelectedSections(
-                          sections
-                            .filter((s) => !s.optional)
-                            .map((s) => s.template_section_id),
-                        )
-                      }
-                      disabled={!templateId || !!packetId}
-                    >
-                      Required only
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded border border-black bg-zinc-100 px-2 py-1 text-xs"
-                      onClick={() =>
-                        setSelectedSections(
-                          sections.map((s) => s.template_section_id),
-                        )
-                      }
-                      disabled={!templateId || !!packetId}
-                    >
-                      Select all
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded border border-black bg-zinc-100 px-2 py-1 text-xs"
-                      onClick={() => setSelectedSections([])}
-                      disabled={!templateId || !!packetId}
-                    >
-                      Clear
-                    </button>
+                  {/* 👇 Quick presets moved directly under Program */}
+                  <div className="mt-3">
+                    <label className="text-xs text-black/60">
+                      Quick section presets
+                    </label>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className="rounded border border-black bg-yellow-300 px-2 py-1 text-xs font-medium text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() =>
+                          setSelectedSections(
+                            sections
+                              .filter((s) => !s.optional)
+                              .map((s) => s.template_section_id),
+                          )
+                        }
+                        disabled={!templateId || !!packetId}
+                      >
+                        Required only
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded border border-black bg-yellow-300 px-2 py-1 text-xs font-medium text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() =>
+                          setSelectedSections(
+                            sections.map((s) => s.template_section_id),
+                          )
+                        }
+                        disabled={!templateId || !!packetId}
+                      >
+                        Select all
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded border border-black bg-yellow-300 px-2 py-1 text-xs font-medium text-black hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() => setSelectedSections([])}
+                        disabled={!templateId || !!packetId}
+                      >
+                        Clear
+                      </button>
+                    </div>
+
+                    {packetId && (
+                      <p className="mt-1 text-[11px] text-black/60">
+                        Section selection is locked for this draft. To change, you
+                        can generate a new packet draft.
+                      </p>
+                    )}
                   </div>
-                  {packetId && (
-                    <p className="mt-1 text-[11px] text-zinc-500">
-                      Section selection is locked for this draft. To change, you
-                      can generate a new packet draft.
-                    </p>
-                  )}
                 </div>
               </div>
+
 
               <div className="rounded-2xl border p-4">
                 {loadingSections ? (
@@ -642,7 +650,7 @@ export default function AdvisingSelectionPage() {
                             {sc.content_type}
                           </span>
                         </div>
-                        <p className="mt-1 line-clamp-3 text-xs text-zinc-600 dark:text-zinc-300">
+                        <p className="mt-1 line-clamp-3 text-xs text-zinc-800 dark:text-zinc-30">
                           {sc.body_preview}
                         </p>
                       </div>
@@ -696,7 +704,7 @@ export default function AdvisingSelectionPage() {
                   />
                 </label>
                 <button
-                  className="rounded-xl border border-black bg-zinc-100 px-3 py-2 text-sm font-semibold text-black hover:bg-zinc-200"
+                  className="rounded-xl border border-black bg-yellow-300 px-3 py-2 text-sm font-semibold text-black hover:bg-yellow-400"
                   onClick={handleExport}
                 >
                   Export (DOCX)

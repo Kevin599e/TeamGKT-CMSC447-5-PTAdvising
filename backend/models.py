@@ -87,7 +87,7 @@ class SourceContent(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
+    usage_tag = Column(String(50), default="general")
 
 class Template(Base):
     """

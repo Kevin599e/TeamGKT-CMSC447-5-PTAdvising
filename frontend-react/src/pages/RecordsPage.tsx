@@ -146,7 +146,7 @@ export default function AdvisingCasePage() {
       <Container>
         <section className="rounded-2xl border p-6">
           <h1 className="text-xl font-semibold tracking-tight">Advising Cases</h1>
-          <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+          <p className="mt-2 text-sm text-black-400 dark:text-zinc-300">
             Create a new advising case (student request) and view all existing ones.
           </p>
 
@@ -155,12 +155,12 @@ export default function AdvisingCasePage() {
             className="mt-6 grid gap-4 rounded-2xl border bg-zinc-50 p-4 dark:bg-zinc-950"
             onSubmit={handleSubmit}
           >
-            <h2 className="text-sm font-semibold">Create New Advising Case</h2>
+            <h2 className="text-sm text-yellow-400 font-semibold">Create New Advising Case</h2>
 
             {/* Student name + email */}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium" htmlFor="student_name">
+                <label className="text-sm text-yellow-400 font-medium" htmlFor="student_name">
                   Student Name
                 </label>
                 <input
@@ -172,7 +172,7 @@ export default function AdvisingCasePage() {
                 />
               </div>
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium" htmlFor="student_email">
+                <label className="text-sm text-yellow-400 font-medium" htmlFor="student_email">
                   Student Email
                 </label>
                 <input
@@ -189,7 +189,7 @@ export default function AdvisingCasePage() {
             {/* Institution + target program */}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium" htmlFor="source_institution">
+                <label className="text-sm text-yellow-400 font-medium" htmlFor="source_institution">
                   Source Institution
                 </label>
                 <input
@@ -201,7 +201,7 @@ export default function AdvisingCasePage() {
                 />
               </div>
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium" htmlFor="target_program">
+                <label className="text-sm text-yellow-400 font-medium" htmlFor="target_program">
                   Intended UMBC Program
                 </label>
                 <input

@@ -29,25 +29,29 @@ def admin_required(fn):
 def list_source_content_public():
     """
     Advisors: list all active source content blocks they can insert into packets.
-    Returns a small preview so UI can show helpful text.
+    You can filter by usage_tag via query parameter, e.g. ?usage_tag=extra_block
     """
-    rows = (
-        db_session.query(SourceContent)
-        .filter_by(active=True)
-        .order_by(SourceContent.title)
-        .all()
-    )
+    tag = request.args.get("usage_tag")
+
+    q = db_session.query(SourceContent).filter_by(active=True)
+    if tag:
+        q = q.filter(SourceContent.usage_tag == tag)
+
+    rows = q.order_by(SourceContent.title).all()
+
     return {
         "items": [
             {
                 "id": sc.id,
                 "title": sc.title,
                 "content_type": sc.content_type,
-                "body_preview": sc.body[:200],  # just a snippet
+                "body_preview": sc.body[:200],
+                "usage_tag": sc.usage_tag,  # NEW
             }
             for sc in rows
         ]
     }
+
 
 @templates_bp.get("")
 def list_templates():
@@ -383,6 +387,7 @@ def create_source_content():
         content_type=data.get("content_type", "text"),
         body=body,
         active=bool(data.get("active", True)),
+        usage_tag=data.get("usage_tag", "general"),
     )
 
     db_session.add(sc)
@@ -393,6 +398,7 @@ def create_source_content():
         "title": sc.title,
         "content_type": sc.content_type,
         "active": sc.active,
+        "usage_tag": sc.usage_tag,  # NEW
         "created_at": sc.created_at.isoformat(),
         "updated_at": sc.updated_at.isoformat() if sc.updated_at else None,
     }, 201
@@ -426,6 +432,8 @@ def update_source_content(content_id):
         sc.body = data["body"]
     if "active" in data:
         sc.active = bool(data["active"])
+    if "usage_tag" in data:
+        sc.usage_tag = data["usage_tag"]
 
     db_session.commit()
 
@@ -434,6 +442,7 @@ def update_source_content(content_id):
         "title": sc.title,
         "content_type": sc.content_type,
         "active": sc.active,
+        "usage_tag": sc.usage_tag,  # NEW
         "created_at": sc.created_at.isoformat(),
         "updated_at": sc.updated_at.isoformat() if sc.updated_at else None,
     }
